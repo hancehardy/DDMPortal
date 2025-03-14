@@ -25,6 +25,11 @@ const Header: React.FC = () => {
                 My Orders
               </Link>
             </li>
+            <li>
+              <Link href="/admin" className="hover:text-blue-200 transition-colors">
+                Admin
+              </Link>
+            </li>
           </ul>
         </nav>
       </div>

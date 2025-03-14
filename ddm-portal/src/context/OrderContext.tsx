@@ -15,6 +15,15 @@ interface OrderContextType {
   glassTypes: GlassType[];
   sizeParameters: SizeParameter[];
   isLoading: boolean;
+  addDoorStyle: (doorStyle: DoorStyle) => void;
+  addFinish: (finish: Finish) => void;
+  addGlassType: (glassType: GlassType) => void;
+  updateDoorStyle: (index: number, doorStyle: DoorStyle) => void;
+  updateFinish: (index: number, finish: Finish) => void;
+  updateGlassType: (index: number, glassType: GlassType) => void;
+  deleteDoorStyle: (index: number) => void;
+  deleteFinish: (index: number) => void;
+  deleteGlassType: (index: number) => void;
 }
 
 const defaultOrderData: OrderFormData = {
@@ -133,9 +142,7 @@ export function OrderProvider({ children }: { children: ReactNode }) {
   const updateOrderItem = (id: string, data: Partial<OrderItem>) => {
     setOrderData(prev => ({
       ...prev,
-      items: prev.items.map(item => 
-        item.id === id ? { ...item, ...data } : item
-      )
+      items: prev.items.map(item => (item.id === id ? { ...item, ...data } : item))
     }));
   };
 
@@ -146,21 +153,66 @@ export function OrderProvider({ children }: { children: ReactNode }) {
     }));
   };
 
+  function addDoorStyle(doorStyle: DoorStyle) {
+    setDoorStyles(prev => [...prev, doorStyle]);
+  }
+
+  function addFinish(finish: Finish) {
+    setFinishes(prev => [...prev, finish]);
+  }
+
+  function addGlassType(glassType: GlassType) {
+    setGlassTypes(prev => [...prev, glassType]);
+  }
+
+  function updateDoorStyle(index: number, doorStyle: DoorStyle) {
+    setDoorStyles(prev => prev.map((style, i) => i === index ? doorStyle : style));
+  }
+
+  function updateFinish(index: number, finish: Finish) {
+    setFinishes(prev => prev.map((f, i) => i === index ? finish : f));
+  }
+
+  function updateGlassType(index: number, glassType: GlassType) {
+    setGlassTypes(prev => prev.map((type, i) => i === index ? glassType : type));
+  }
+
+  function deleteDoorStyle(index: number) {
+    setDoorStyles(prev => prev.filter((_, i) => i !== index));
+  }
+
+  function deleteFinish(index: number) {
+    setFinishes(prev => prev.filter((_, i) => i !== index));
+  }
+
+  function deleteGlassType(index: number) {
+    setGlassTypes(prev => prev.filter((_, i) => i !== index));
+  }
+
+  const contextValue: OrderContextType = {
+    orderData,
+    updateOrderData,
+    addOrderItem,
+    updateOrderItem,
+    removeOrderItem,
+    doorStyles,
+    finishes,
+    glassTypes,
+    sizeParameters,
+    isLoading,
+    addDoorStyle,
+    addFinish,
+    addGlassType,
+    updateDoorStyle,
+    updateFinish,
+    updateGlassType,
+    deleteDoorStyle,
+    deleteFinish,
+    deleteGlassType
+  };
+
   return (
-    <OrderContext.Provider
-      value={{
-        orderData,
-        updateOrderData,
-        addOrderItem,
-        updateOrderItem,
-        removeOrderItem,
-        doorStyles,
-        finishes,
-        glassTypes,
-        sizeParameters,
-        isLoading
-      }}
-    >
+    <OrderContext.Provider value={contextValue}>
       {children}
     </OrderContext.Provider>
   );
