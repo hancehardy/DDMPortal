@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { OrderFormData, OrderItem, DoorStyle, Finish, GlassType, SizeParameter } from '@/types';
+import { OrderFormData, OrderItem, DoorStyle, Finish, GlassType, SizeParameter, Manufacturer } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
 
 interface OrderContextType {
@@ -14,16 +14,20 @@ interface OrderContextType {
   finishes: Finish[];
   glassTypes: GlassType[];
   sizeParameters: SizeParameter[];
+  manufacturers: Manufacturer[];
   isLoading: boolean;
   addDoorStyle: (doorStyle: DoorStyle) => void;
   addFinish: (finish: Finish) => void;
   addGlassType: (glassType: GlassType) => void;
+  addManufacturer: (manufacturer: Manufacturer) => void;
   updateDoorStyle: (index: number, doorStyle: DoorStyle) => void;
   updateFinish: (index: number, finish: Finish) => void;
   updateGlassType: (index: number, glassType: GlassType) => void;
+  updateManufacturer: (index: number, manufacturer: Manufacturer) => void;
   deleteDoorStyle: (index: number) => void;
   deleteFinish: (index: number) => void;
   deleteGlassType: (index: number) => void;
+  deleteManufacturer: (index: number) => void;
 }
 
 const defaultOrderData: OrderFormData = {
@@ -90,6 +94,7 @@ export function OrderProvider({ children }: { children: ReactNode }) {
   const [finishes, setFinishes] = useState<Finish[]>([]);
   const [glassTypes, setGlassTypes] = useState<GlassType[]>([]);
   const [sizeParameters, setSizeParameters] = useState<SizeParameter[]>([]);
+  const [manufacturers, setManufacturers] = useState<Manufacturer[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -105,6 +110,11 @@ export function OrderProvider({ children }: { children: ReactNode }) {
         setFinishes(mockFinishes);
         setGlassTypes(mockGlassTypes);
         setSizeParameters(mockSizeParameters);
+        setManufacturers([
+          { name: 'Sherwin Williams' },
+          { name: 'Benjamin Moore' },
+          { name: 'Minwax' },
+        ]);
       } catch (error) {
         console.error('Error loading data:', error);
       } finally {
@@ -165,6 +175,10 @@ export function OrderProvider({ children }: { children: ReactNode }) {
     setGlassTypes(prev => [...prev, glassType]);
   }
 
+  function addManufacturer(manufacturer: Manufacturer) {
+    setManufacturers(prev => [...prev, manufacturer]);
+  }
+
   function updateDoorStyle(index: number, doorStyle: DoorStyle) {
     setDoorStyles(prev => prev.map((style, i) => i === index ? doorStyle : style));
   }
@@ -175,6 +189,10 @@ export function OrderProvider({ children }: { children: ReactNode }) {
 
   function updateGlassType(index: number, glassType: GlassType) {
     setGlassTypes(prev => prev.map((type, i) => i === index ? glassType : type));
+  }
+
+  function updateManufacturer(index: number, manufacturer: Manufacturer) {
+    setManufacturers(prev => prev.map((m, i) => i === index ? manufacturer : m));
   }
 
   function deleteDoorStyle(index: number) {
@@ -189,6 +207,10 @@ export function OrderProvider({ children }: { children: ReactNode }) {
     setGlassTypes(prev => prev.filter((_, i) => i !== index));
   }
 
+  function deleteManufacturer(index: number) {
+    setManufacturers(prev => prev.filter((_, i) => i !== index));
+  }
+
   const contextValue: OrderContextType = {
     orderData,
     updateOrderData,
@@ -199,16 +221,20 @@ export function OrderProvider({ children }: { children: ReactNode }) {
     finishes,
     glassTypes,
     sizeParameters,
+    manufacturers,
     isLoading,
     addDoorStyle,
     addFinish,
     addGlassType,
+    addManufacturer,
     updateDoorStyle,
     updateFinish,
     updateGlassType,
+    updateManufacturer,
     deleteDoorStyle,
     deleteFinish,
-    deleteGlassType
+    deleteGlassType,
+    deleteManufacturer,
   };
 
   return (

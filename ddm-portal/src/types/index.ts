@@ -34,6 +34,7 @@ export interface OrderItem {
 export interface DoorStyle {
   name: string;
   available: boolean;
+  manufacturer?: string;
 }
 
 export interface Finish {
@@ -51,4 +52,8 @@ export interface SizeParameter {
   name: string;
   inches: number;
   mm: number;
+}
+
+export interface Manufacturer {
+  name: string;
 } 
