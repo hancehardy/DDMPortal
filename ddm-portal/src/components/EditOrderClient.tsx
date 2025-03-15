@@ -20,8 +20,12 @@ const EditOrderClient: React.FC<EditOrderClientProps> = ({ id }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [orderLoaded, setOrderLoaded] = useState(false);
   
   useEffect(() => {
+    // Prevent infinite loop by only fetching once
+    if (orderLoaded) return;
+    
     // Fetch the order data from localStorage or use mock data if not found
     const fetchOrder = async () => {
       try {
@@ -33,6 +37,7 @@ const EditOrderClient: React.FC<EditOrderClientProps> = ({ id }) => {
           if (foundOrder) {
             // Update the order context with the fetched data
             updateOrderData(foundOrder);
+            setOrderLoaded(true);
             return;
           }
         }
@@ -94,14 +99,16 @@ const EditOrderClient: React.FC<EditOrderClientProps> = ({ id }) => {
         
         // Update the order context with the mock data
         updateOrderData(mockOrder);
+        setOrderLoaded(true);
       } catch (error) {
         console.error('Error fetching order:', error);
         setError('Failed to load order data. Please try again.');
+        setOrderLoaded(true); // Mark as loaded even on error to prevent infinite retries
       }
     };
     
     fetchOrder();
-  }, [id, updateOrderData]);
+  }, [id, updateOrderData, orderLoaded]);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -120,6 +127,10 @@ const EditOrderClient: React.FC<EditOrderClientProps> = ({ id }) => {
           o.id === id ? { ...orderData, id } : o
         );
         localStorage.setItem('savedOrders', JSON.stringify(updatedOrders));
+      } else {
+        // If no orders exist yet, create a new array with this order
+        const newOrders = [{ ...orderData, id }];
+        localStorage.setItem('savedOrders', JSON.stringify(newOrders));
       }
       
       setSuccess(true);
