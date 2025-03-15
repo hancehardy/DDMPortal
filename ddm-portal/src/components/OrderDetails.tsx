@@ -2,7 +2,7 @@ import React from 'react';
 import { useOrder } from '@/context/OrderContext';
 
 const OrderDetails: React.FC = () => {
-  const { orderData, updateOrderData, doorStyles, finishes, isLoading } = useOrder();
+  const { orderData, updateOrderData, doorStyles, finishes, manufacturers, isLoading } = useOrder();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -70,14 +70,20 @@ const OrderDetails: React.FC = () => {
           <label htmlFor="manufacturer" className="block text-sm font-medium text-gray-700 mb-1">
             Manufacturer
           </label>
-          <input
-            type="text"
+          <select
             id="manufacturer"
             name="manufacturer"
             value={orderData.manufacturer}
             onChange={handleChange}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+          >
+            <option value="">Select Manufacturer</option>
+            {manufacturers.map((manufacturer) => (
+              <option key={manufacturer.name} value={manufacturer.name}>
+                {manufacturer.name}
+              </option>
+            ))}
+          </select>
         </div>
         
         <div>
