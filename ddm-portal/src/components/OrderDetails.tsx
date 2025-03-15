@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useOrder } from '@/context/OrderContext';
 
 const OrderDetails: React.FC = () => {
@@ -6,8 +6,25 @@ const OrderDetails: React.FC = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    updateOrderData({ [name]: value });
+    
+    // If manufacturer changes, reset the color selection
+    if (name === 'manufacturer' && value !== orderData.manufacturer) {
+      updateOrderData({ 
+        [name]: value,
+        color: '' // Reset color when manufacturer changes
+      });
+    } else {
+      updateOrderData({ [name]: value });
+    }
   };
+
+  // Filter finishes based on selected manufacturer
+  const filteredFinishes = useMemo(() => {
+    if (!orderData.manufacturer) {
+      return []; // No finishes if no manufacturer is selected
+    }
+    return finishes.filter(finish => finish.manufacturer === orderData.manufacturer);
+  }, [finishes, orderData.manufacturer]);
 
   if (isLoading) {
     return <div className="text-center py-4">Loading order details...</div>;
@@ -96,9 +113,17 @@ const OrderDetails: React.FC = () => {
             value={orderData.color}
             onChange={handleChange}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            disabled={!orderData.manufacturer} // Disable if no manufacturer selected
           >
-            <option value="">Select Color</option>
-            {finishes.map((finish) => (
+            <option value="">
+              {!orderData.manufacturer 
+                ? "Select a manufacturer first" 
+                : filteredFinishes.length === 0 
+                  ? "No colors available for this manufacturer" 
+                  : "Select Color"
+              }
+            </option>
+            {filteredFinishes.map((finish) => (
               <option key={finish.name} value={finish.name}>
                 {finish.name}
               </option>
