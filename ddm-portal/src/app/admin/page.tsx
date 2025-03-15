@@ -304,7 +304,7 @@ export default function AdminPage() {
 
           {activeTab === 'doorStyles' && (
             <div>
-              <h2 className="text-xl font-semibold mb-4">
+              <h2 className="text-xl font-semibold mb-4 text-gray-800">
                 {editingIndex !== null ? 'Edit Door Style' : 'Add New Door Style'}
               </h2>
               <form onSubmit={handleAddDoorStyle} className="space-y-4">
@@ -353,7 +353,7 @@ export default function AdminPage() {
               </form>
 
               <div className="mt-8">
-                <h3 className="text-lg font-medium mb-2">Current Door Styles</h3>
+                <h3 className="text-lg font-medium mb-2 text-gray-800">Current Door Styles</h3>
                 <div className="bg-gray-50 rounded-md p-4">
                   <ul className="divide-y divide-gray-200">
                     {doorStyles.map((style, index) => (
@@ -390,7 +390,7 @@ export default function AdminPage() {
 
           {activeTab === 'finishes' && (
             <div>
-              <h2 className="text-xl font-semibold mb-4">
+              <h2 className="text-xl font-semibold mb-4 text-gray-800">
                 {editingIndex !== null ? 'Edit Finish' : 'Add New Finish'}
               </h2>
               <form onSubmit={handleAddFinish} className="space-y-4">
@@ -446,7 +446,7 @@ export default function AdminPage() {
               </form>
 
               <div className="mt-8">
-                <h3 className="text-lg font-medium mb-2">Current Finishes</h3>
+                <h3 className="text-lg font-medium mb-2 text-gray-800">Current Finishes</h3>
                 <div className="bg-gray-50 rounded-md p-4">
                   <ul className="divide-y divide-gray-200">
                     {finishes.map((finish, index) => (
@@ -479,7 +479,7 @@ export default function AdminPage() {
 
           {activeTab === 'glassTypes' && (
             <div>
-              <h2 className="text-xl font-semibold mb-4">
+              <h2 className="text-xl font-semibold mb-4 text-gray-800">
                 {editingIndex !== null ? 'Edit Glass Type' : 'Add New Glass Type'}
               </h2>
               <form onSubmit={handleAddGlassType} className="space-y-4">
@@ -546,7 +546,7 @@ export default function AdminPage() {
               </form>
 
               <div className="mt-8">
-                <h3 className="text-lg font-medium mb-2">Current Glass Types</h3>
+                <h3 className="text-lg font-medium mb-2 text-gray-800">Current Glass Types</h3>
                 <div className="bg-gray-50 rounded-md p-4">
                   <ul className="divide-y divide-gray-200">
                     {glassTypes.map((glass, index) => (
@@ -581,7 +581,7 @@ export default function AdminPage() {
 
           {activeTab === 'manufacturers' && (
             <div>
-              <h2 className="text-xl font-semibold mb-4">
+              <h2 className="text-xl font-semibold mb-4 text-gray-800">
                 {editingIndex !== null ? 'Edit Manufacturer' : 'Add New Manufacturer'}
               </h2>
               <form onSubmit={handleAddManufacturer} className="space-y-4">
@@ -618,7 +618,7 @@ export default function AdminPage() {
               </form>
 
               <div className="mt-8">
-                <h3 className="text-lg font-medium mb-2">Current Manufacturers</h3>
+                <h3 className="text-lg font-medium mb-2 text-gray-800">Current Manufacturers</h3>
                 <div className="bg-gray-50 rounded-md p-4">
                   <ul className="divide-y divide-gray-200">
                     {manufacturers.map((manufacturer, index) => (
