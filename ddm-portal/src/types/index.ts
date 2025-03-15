@@ -24,7 +24,6 @@ export interface OrderItem {
   qty: number;
   width: number;
   height: number;
-  bore: boolean;
   centerRail: boolean;
   glass: boolean;
   glassType: string;

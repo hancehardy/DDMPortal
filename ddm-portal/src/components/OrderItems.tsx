@@ -101,15 +101,6 @@ const OrderItems: React.FC = () => {
                     <label className="inline-flex items-center">
                       <input
                         type="checkbox"
-                        checked={item.bore}
-                        onChange={(e) => handleCheckboxChange(item.id, 'bore', e.target.checked)}
-                        className="rounded text-blue-600 focus:ring-blue-500"
-                      />
-                      <span className="ml-2 text-sm text-gray-700">Bore</span>
-                    </label>
-                    <label className="inline-flex items-center">
-                      <input
-                        type="checkbox"
                         checked={item.centerRail}
                         onChange={(e) => handleCheckboxChange(item.id, 'centerRail', e.target.checked)}
                         className="rounded text-blue-600 focus:ring-blue-500"
