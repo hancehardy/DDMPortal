@@ -22,14 +22,26 @@ const EditOrderClient: React.FC<EditOrderClientProps> = ({ id }) => {
   const [success, setSuccess] = useState(false);
   
   useEffect(() => {
-    // In a real app, this would fetch the order from an API
+    // Fetch the order data from localStorage or use mock data if not found
     const fetchOrder = async () => {
       try {
-        // Simulate API call
+        // Try to get from localStorage
+        const savedOrders = localStorage.getItem('savedOrders');
+        if (savedOrders) {
+          const orders = JSON.parse(savedOrders);
+          const foundOrder = orders.find((o: any) => o.id === id);
+          if (foundOrder) {
+            // Update the order context with the fetched data
+            updateOrderData(foundOrder);
+            return;
+          }
+        }
+        
+        // If not found in localStorage, use mock data
+        // In a real app, this would be an API call
         await new Promise(resolve => setTimeout(resolve, 500));
         
-        // For now, we'll use mock data
-        // In a real app, you would fetch the order data from your backend
+        // Mock data for demonstration
         const mockOrder: OrderFormData = {
           id: id,
           company: 'ABC Cabinets',
@@ -80,7 +92,7 @@ const EditOrderClient: React.FC<EditOrderClientProps> = ({ id }) => {
           ]
         };
         
-        // Update the order context with the fetched data
+        // Update the order context with the mock data
         updateOrderData(mockOrder);
       } catch (error) {
         console.error('Error fetching order:', error);
@@ -99,6 +111,16 @@ const EditOrderClient: React.FC<EditOrderClientProps> = ({ id }) => {
     try {
       // In a real app, you would send the updated order data to your backend
       await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Update the order in localStorage
+      const savedOrders = localStorage.getItem('savedOrders');
+      if (savedOrders) {
+        const orders = JSON.parse(savedOrders);
+        const updatedOrders = orders.map((o: OrderFormData) => 
+          o.id === id ? { ...orderData, id } : o
+        );
+        localStorage.setItem('savedOrders', JSON.stringify(updatedOrders));
+      }
       
       setSuccess(true);
       // Redirect to the order view page after successful update
