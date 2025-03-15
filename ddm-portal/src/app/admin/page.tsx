@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Layout from '@/components/Layout';
-import { DoorStyle, Finish, GlassType } from '@/types';
+import { DoorStyle, Finish, GlassType, Manufacturer } from '@/types';
 import { useOrder } from '@/context/OrderContext';
 
 export default function AdminPage() {
@@ -10,20 +10,25 @@ export default function AdminPage() {
     doorStyles, 
     finishes, 
     glassTypes, 
+    manufacturers,
     addDoorStyle, 
     addFinish, 
     addGlassType,
+    addManufacturer,
     updateDoorStyle,
     updateFinish,
     updateGlassType,
+    updateManufacturer,
     deleteDoorStyle,
     deleteFinish,
-    deleteGlassType
+    deleteGlassType,
+    deleteManufacturer
   } = useOrder();
   
   const [newDoorStyle, setNewDoorStyle] = useState<Partial<DoorStyle>>({
     name: '',
-    available: true
+    available: true,
+    manufacturer: ''
   });
   
   const [newFinish, setNewFinish] = useState<Partial<Finish>>({
@@ -37,7 +42,11 @@ export default function AdminPage() {
     sqftMinimum: 1
   });
 
-  const [activeTab, setActiveTab] = useState<'doorStyles' | 'finishes' | 'glassTypes'>('doorStyles');
+  const [newManufacturer, setNewManufacturer] = useState<Partial<Manufacturer>>({
+    name: ''
+  });
+
+  const [activeTab, setActiveTab] = useState<'doorStyles' | 'finishes' | 'glassTypes' | 'manufacturers'>('doorStyles');
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
@@ -45,24 +54,29 @@ export default function AdminPage() {
   const handleAddDoorStyle = (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      if (newDoorStyle.name) {
+      if (newDoorStyle.name && newDoorStyle.manufacturer) {
         if (editingIndex !== null) {
           updateDoorStyle(editingIndex, {
             name: newDoorStyle.name,
-            available: newDoorStyle.available ?? true
+            available: newDoorStyle.available ?? true,
+            manufacturer: newDoorStyle.manufacturer
           });
           setSuccessMessage(`Door style "${newDoorStyle.name}" updated successfully!`);
         } else {
           addDoorStyle({
             name: newDoorStyle.name,
-            available: newDoorStyle.available ?? true
+            available: newDoorStyle.available ?? true,
+            manufacturer: newDoorStyle.manufacturer
           });
           setSuccessMessage(`Door style "${newDoorStyle.name}" added successfully!`);
         }
-        setNewDoorStyle({ name: '', available: true });
+        setNewDoorStyle({ name: '', available: true, manufacturer: '' });
         setEditingIndex(null);
         setErrorMessage('');
         setTimeout(() => setSuccessMessage(''), 3000);
+      } else {
+        setErrorMessage('Please fill in all required fields');
+        setTimeout(() => setErrorMessage(''), 5000);
       }
     } catch (error) {
       console.error('Error handling door style:', error);
@@ -131,7 +145,37 @@ export default function AdminPage() {
     }
   };
 
-  const handleEdit = (index: number, type: 'doorStyles' | 'finishes' | 'glassTypes') => {
+  const handleAddManufacturer = (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      if (newManufacturer.name) {
+        if (editingIndex !== null) {
+          updateManufacturer(editingIndex, {
+            name: newManufacturer.name
+          });
+          setSuccessMessage(`Manufacturer "${newManufacturer.name}" updated successfully!`);
+        } else {
+          addManufacturer({
+            name: newManufacturer.name
+          });
+          setSuccessMessage(`Manufacturer "${newManufacturer.name}" added successfully!`);
+        }
+        setNewManufacturer({ name: '' });
+        setEditingIndex(null);
+        setErrorMessage('');
+        setTimeout(() => setSuccessMessage(''), 3000);
+      } else {
+        setErrorMessage('Please enter a manufacturer name');
+        setTimeout(() => setErrorMessage(''), 5000);
+      }
+    } catch (error) {
+      console.error('Error handling manufacturer:', error);
+      setErrorMessage(`Error handling manufacturer: ${error instanceof Error ? error.message : String(error)}`);
+      setTimeout(() => setErrorMessage(''), 5000);
+    }
+  };
+
+  const handleEdit = (index: number, type: 'doorStyles' | 'finishes' | 'glassTypes' | 'manufacturers') => {
     setEditingIndex(index);
     switch (type) {
       case 'doorStyles':
@@ -143,10 +187,13 @@ export default function AdminPage() {
       case 'glassTypes':
         setNewGlassType(glassTypes[index]);
         break;
+      case 'manufacturers':
+        setNewManufacturer(manufacturers[index]);
+        break;
     }
   };
 
-  const handleDelete = (index: number, type: 'doorStyles' | 'finishes' | 'glassTypes') => {
+  const handleDelete = (index: number, type: 'doorStyles' | 'finishes' | 'glassTypes' | 'manufacturers') => {
     try {
       switch (type) {
         case 'doorStyles':
@@ -161,6 +208,10 @@ export default function AdminPage() {
           deleteGlassType(index);
           setSuccessMessage(`Glass type deleted successfully!`);
           break;
+        case 'manufacturers':
+          deleteManufacturer(index);
+          setSuccessMessage(`Manufacturer deleted successfully!`);
+          break;
       }
       setErrorMessage('');
       setTimeout(() => setSuccessMessage(''), 3000);
@@ -173,9 +224,10 @@ export default function AdminPage() {
 
   const handleCancelEdit = () => {
     setEditingIndex(null);
-    setNewDoorStyle({ name: '', available: true });
+    setNewDoorStyle({ name: '', available: true, manufacturer: '' });
     setNewFinish({ name: '', manufacturer: '' });
     setNewGlassType({ name: '', sqftPrice: 0, sqftMinimum: 1 });
+    setNewManufacturer({ name: '' });
   };
 
   return (
@@ -225,6 +277,19 @@ export default function AdminPage() {
               >
                 Glass Types
               </button>
+              <button
+                onClick={() => {
+                  setActiveTab('manufacturers');
+                  handleCancelEdit();
+                }}
+                className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'manufacturers'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                Manufacturers
+              </button>
             </nav>
           </div>
 
@@ -258,6 +323,25 @@ export default function AdminPage() {
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                     required
                   />
+                </div>
+                <div>
+                  <label htmlFor="doorStyleManufacturer" className="block text-sm font-medium text-gray-700">
+                    Manufacturer*
+                  </label>
+                  <select
+                    id="doorStyleManufacturer"
+                    value={newDoorStyle.manufacturer}
+                    onChange={(e) => setNewDoorStyle({...newDoorStyle, manufacturer: e.target.value})}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    required
+                  >
+                    <option value="">Select a manufacturer</option>
+                    {manufacturers.map((manufacturer, index) => (
+                      <option key={index} value={manufacturer.name}>
+                        {manufacturer.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div className="flex items-center">
                   <input
@@ -298,6 +382,9 @@ export default function AdminPage() {
                       <li key={index} className="py-3 flex justify-between items-center">
                         <div>
                           <span className="text-gray-900">{style.name}</span>
+                          {style.manufacturer && (
+                            <span className="ml-2 text-gray-500">({style.manufacturer})</span>
+                          )}
                           <span className={`ml-2 px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                             style.available ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                           }`}>
@@ -349,14 +436,20 @@ export default function AdminPage() {
                   <label htmlFor="manufacturer" className="block text-sm font-medium text-gray-700">
                     Manufacturer*
                   </label>
-                  <input
-                    type="text"
+                  <select
                     id="manufacturer"
                     value={newFinish.manufacturer}
                     onChange={(e) => setNewFinish({...newFinish, manufacturer: e.target.value})}
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                     required
-                  />
+                  >
+                    <option value="">Select a manufacturer</option>
+                    {manufacturers.map((manufacturer, index) => (
+                      <option key={index} value={manufacturer.name}>
+                        {manufacturer.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div className="flex space-x-4">
                   <button
@@ -498,6 +591,75 @@ export default function AdminPage() {
                           </button>
                           <button
                             onClick={() => handleDelete(index, 'glassTypes')}
+                            className="text-red-600 hover:text-red-800"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'manufacturers' && (
+            <div>
+              <h2 className="text-xl font-semibold mb-4">
+                {editingIndex !== null ? 'Edit Manufacturer' : 'Add New Manufacturer'}
+              </h2>
+              <form onSubmit={handleAddManufacturer} className="space-y-4">
+                <div>
+                  <label htmlFor="manufacturerName" className="block text-sm font-medium text-gray-700">
+                    Manufacturer Name*
+                  </label>
+                  <input
+                    type="text"
+                    id="manufacturerName"
+                    value={newManufacturer.name}
+                    onChange={(e) => setNewManufacturer({...newManufacturer, name: e.target.value})}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    required
+                  />
+                </div>
+                <div className="flex space-x-4">
+                  <button
+                    type="submit"
+                    className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  >
+                    {editingIndex !== null ? 'Update' : 'Add'} Manufacturer
+                  </button>
+                  {editingIndex !== null && (
+                    <button
+                      type="button"
+                      onClick={handleCancelEdit}
+                      className="inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    >
+                      Cancel
+                    </button>
+                  )}
+                </div>
+              </form>
+
+              <div className="mt-8">
+                <h3 className="text-lg font-medium mb-2">Current Manufacturers</h3>
+                <div className="bg-gray-50 rounded-md p-4">
+                  <ul className="divide-y divide-gray-200">
+                    {manufacturers.map((manufacturer, index) => (
+                      <li key={index} className="py-3 flex justify-between items-center">
+                        <div>
+                          <span className="text-gray-900">{manufacturer.name}</span>
+                        </div>
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => handleEdit(index, 'manufacturers')}
+                            className="text-blue-600 hover:text-blue-800"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDelete(index, 'manufacturers')}
                             className="text-red-600 hover:text-red-800"
                           >
                             Delete
