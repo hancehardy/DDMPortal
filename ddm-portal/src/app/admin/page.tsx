@@ -475,7 +475,7 @@ export default function AdminPage() {
                         <div>
                           <span className="text-gray-900">{finish.name}</span>
                           <span className="ml-2 text-gray-500">{finish.manufacturer}</span>
-                          <span className="ml-2 text-gray-500">${finish.sqftPrice.toFixed(2)}/sqft</span>
+                          <span className="ml-2 text-gray-500">${(finish.sqftPrice || 0).toFixed(2)}/sqft</span>
                         </div>
                         <div className="flex space-x-2">
                           <button

@@ -111,6 +111,13 @@ export function OrderProvider({ children }: { children: ReactNode }) {
         // In a real app, this would be an API call
         await new Promise(resolve => setTimeout(resolve, 500));
         
+        // One-time reset for schema change (remove this in production)
+        const schemaVersion = localStorage.getItem('schemaVersion');
+        if (schemaVersion !== '1.1') {
+          localStorage.removeItem('finishes');
+          localStorage.setItem('schemaVersion', '1.1');
+        }
+        
         // Load from localStorage or use mock data
         if (typeof window !== 'undefined') {
           const storedDoorStyles = localStorage.getItem('doorStyles');
@@ -119,7 +126,19 @@ export function OrderProvider({ children }: { children: ReactNode }) {
           const storedManufacturers = localStorage.getItem('manufacturers');
           
           setDoorStyles(storedDoorStyles ? JSON.parse(storedDoorStyles) : mockDoorStyles);
-          setFinishes(storedFinishes ? JSON.parse(storedFinishes) : mockFinishes);
+          
+          // Handle migration for finishes that don't have sqftPrice
+          if (storedFinishes) {
+            const parsedFinishes = JSON.parse(storedFinishes);
+            const migratedFinishes = parsedFinishes.map((finish: any) => ({
+              ...finish,
+              sqftPrice: finish.sqftPrice !== undefined ? finish.sqftPrice : 0
+            }));
+            setFinishes(migratedFinishes);
+          } else {
+            setFinishes(mockFinishes);
+          }
+          
           setGlassTypes(storedGlassTypes ? JSON.parse(storedGlassTypes) : mockGlassTypes);
           setSizeParameters(mockSizeParameters); // No need to persist size parameters
           setManufacturers(storedManufacturers ? JSON.parse(storedManufacturers) : mockManufacturers);
