@@ -34,7 +34,6 @@ export interface OrderItem {
 export interface DoorStyle {
   name: string;
   available: boolean;
-  manufacturer?: string;
 }
 
 export interface Finish {

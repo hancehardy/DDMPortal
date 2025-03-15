@@ -27,8 +27,7 @@ export default function AdminPage() {
   
   const [newDoorStyle, setNewDoorStyle] = useState<Partial<DoorStyle>>({
     name: '',
-    available: true,
-    manufacturer: ''
+    available: true
   });
   
   const [newFinish, setNewFinish] = useState<Partial<Finish>>({
@@ -54,23 +53,21 @@ export default function AdminPage() {
   const handleAddDoorStyle = (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      if (newDoorStyle.name && newDoorStyle.manufacturer) {
+      if (newDoorStyle.name) {
         if (editingIndex !== null) {
           updateDoorStyle(editingIndex, {
             name: newDoorStyle.name,
-            available: newDoorStyle.available ?? true,
-            manufacturer: newDoorStyle.manufacturer
+            available: newDoorStyle.available ?? true
           });
           setSuccessMessage(`Door style "${newDoorStyle.name}" updated successfully!`);
         } else {
           addDoorStyle({
             name: newDoorStyle.name,
-            available: newDoorStyle.available ?? true,
-            manufacturer: newDoorStyle.manufacturer
+            available: newDoorStyle.available ?? true
           });
           setSuccessMessage(`Door style "${newDoorStyle.name}" added successfully!`);
         }
-        setNewDoorStyle({ name: '', available: true, manufacturer: '' });
+        setNewDoorStyle({ name: '', available: true });
         setEditingIndex(null);
         setErrorMessage('');
         setTimeout(() => setSuccessMessage(''), 3000);
@@ -224,7 +221,7 @@ export default function AdminPage() {
 
   const handleCancelEdit = () => {
     setEditingIndex(null);
-    setNewDoorStyle({ name: '', available: true, manufacturer: '' });
+    setNewDoorStyle({ name: '', available: true });
     setNewFinish({ name: '', manufacturer: '' });
     setNewGlassType({ name: '', sqftPrice: 0, sqftMinimum: 1 });
     setNewManufacturer({ name: '' });
@@ -324,25 +321,6 @@ export default function AdminPage() {
                     required
                   />
                 </div>
-                <div>
-                  <label htmlFor="doorStyleManufacturer" className="block text-sm font-medium text-gray-700">
-                    Manufacturer*
-                  </label>
-                  <select
-                    id="doorStyleManufacturer"
-                    value={newDoorStyle.manufacturer}
-                    onChange={(e) => setNewDoorStyle({...newDoorStyle, manufacturer: e.target.value})}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    required
-                  >
-                    <option value="">Select a manufacturer</option>
-                    {manufacturers.map((manufacturer, index) => (
-                      <option key={index} value={manufacturer.name}>
-                        {manufacturer.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
                 <div className="flex items-center">
                   <input
                     type="checkbox"
@@ -382,9 +360,6 @@ export default function AdminPage() {
                       <li key={index} className="py-3 flex justify-between items-center">
                         <div>
                           <span className="text-gray-900">{style.name}</span>
-                          {style.manufacturer && (
-                            <span className="ml-2 text-gray-500">({style.manufacturer})</span>
-                          )}
                           <span className={`ml-2 px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                             style.available ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                           }`}>
