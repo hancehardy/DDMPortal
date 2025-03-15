@@ -86,6 +86,13 @@ const mockSizeParameters: SizeParameter[] = [
   { name: 'Maximum Height', inches: 96, mm: 2438 }
 ];
 
+const mockManufacturers: Manufacturer[] = [
+  { name: 'Sherwin Williams' },
+  { name: 'Benjamin Moore' },
+  { name: 'Minwax' },
+  { name: 'Natural Wood' }
+];
+
 const OrderContext = createContext<OrderContextType | undefined>(undefined);
 
 export function OrderProvider({ children }: { children: ReactNode }) {
@@ -97,26 +104,42 @@ export function OrderProvider({ children }: { children: ReactNode }) {
   const [manufacturers, setManufacturers] = useState<Manufacturer[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Load data from localStorage or use mock data
   useEffect(() => {
-    // Simulate loading data from API
     const loadData = async () => {
       setIsLoading(true);
       try {
         // In a real app, this would be an API call
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise(resolve => setTimeout(resolve, 500));
         
-        // Set mock data
+        // Load from localStorage or use mock data
+        if (typeof window !== 'undefined') {
+          const storedDoorStyles = localStorage.getItem('doorStyles');
+          const storedFinishes = localStorage.getItem('finishes');
+          const storedGlassTypes = localStorage.getItem('glassTypes');
+          const storedManufacturers = localStorage.getItem('manufacturers');
+          
+          setDoorStyles(storedDoorStyles ? JSON.parse(storedDoorStyles) : mockDoorStyles);
+          setFinishes(storedFinishes ? JSON.parse(storedFinishes) : mockFinishes);
+          setGlassTypes(storedGlassTypes ? JSON.parse(storedGlassTypes) : mockGlassTypes);
+          setSizeParameters(mockSizeParameters); // No need to persist size parameters
+          setManufacturers(storedManufacturers ? JSON.parse(storedManufacturers) : mockManufacturers);
+        } else {
+          // Fallback for SSR
+          setDoorStyles(mockDoorStyles);
+          setFinishes(mockFinishes);
+          setGlassTypes(mockGlassTypes);
+          setSizeParameters(mockSizeParameters);
+          setManufacturers(mockManufacturers);
+        }
+      } catch (error) {
+        console.error('Error loading data:', error);
+        // Fallback to mock data on error
         setDoorStyles(mockDoorStyles);
         setFinishes(mockFinishes);
         setGlassTypes(mockGlassTypes);
         setSizeParameters(mockSizeParameters);
-        setManufacturers([
-          { name: 'Sherwin Williams' },
-          { name: 'Benjamin Moore' },
-          { name: 'Minwax' },
-        ]);
-      } catch (error) {
-        console.error('Error loading data:', error);
+        setManufacturers(mockManufacturers);
       } finally {
         setIsLoading(false);
       }
@@ -124,6 +147,16 @@ export function OrderProvider({ children }: { children: ReactNode }) {
 
     loadData();
   }, []);
+
+  // Save data to localStorage when it changes
+  useEffect(() => {
+    if (typeof window !== 'undefined' && !isLoading) {
+      localStorage.setItem('doorStyles', JSON.stringify(doorStyles));
+      localStorage.setItem('finishes', JSON.stringify(finishes));
+      localStorage.setItem('glassTypes', JSON.stringify(glassTypes));
+      localStorage.setItem('manufacturers', JSON.stringify(manufacturers));
+    }
+  }, [doorStyles, finishes, glassTypes, manufacturers, isLoading]);
 
   const updateOrderData = (data: Partial<OrderFormData>) => {
     setOrderData(prev => ({ ...prev, ...data }));
