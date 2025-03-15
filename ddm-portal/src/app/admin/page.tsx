@@ -32,7 +32,8 @@ export default function AdminPage() {
   
   const [newFinish, setNewFinish] = useState<Partial<Finish>>({
     name: '',
-    manufacturer: ''
+    manufacturer: '',
+    sqftPrice: 0
   });
   
   const [newGlassType, setNewGlassType] = useState<Partial<GlassType>>({
@@ -85,24 +86,29 @@ export default function AdminPage() {
   const handleAddFinish = (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      if (newFinish.name && newFinish.manufacturer) {
+      if (newFinish.name && newFinish.manufacturer && newFinish.sqftPrice !== undefined) {
         if (editingIndex !== null) {
           updateFinish(editingIndex, {
             name: newFinish.name,
-            manufacturer: newFinish.manufacturer
+            manufacturer: newFinish.manufacturer,
+            sqftPrice: newFinish.sqftPrice
           });
           setSuccessMessage(`Finish "${newFinish.name}" updated successfully!`);
         } else {
           addFinish({
             name: newFinish.name,
-            manufacturer: newFinish.manufacturer
+            manufacturer: newFinish.manufacturer,
+            sqftPrice: newFinish.sqftPrice
           });
           setSuccessMessage(`Finish "${newFinish.name}" added successfully!`);
         }
-        setNewFinish({ name: '', manufacturer: '' });
+        setNewFinish({ name: '', manufacturer: '', sqftPrice: 0 });
         setEditingIndex(null);
         setErrorMessage('');
         setTimeout(() => setSuccessMessage(''), 3000);
+      } else {
+        setErrorMessage('Please fill in all required fields');
+        setTimeout(() => setErrorMessage(''), 5000);
       }
     } catch (error) {
       console.error('Error handling finish:', error);
@@ -222,7 +228,7 @@ export default function AdminPage() {
   const handleCancelEdit = () => {
     setEditingIndex(null);
     setNewDoorStyle({ name: '', available: true });
-    setNewFinish({ name: '', manufacturer: '' });
+    setNewFinish({ name: '', manufacturer: '', sqftPrice: 0 });
     setNewGlassType({ name: '', sqftPrice: 0, sqftMinimum: 1 });
     setNewManufacturer({ name: '' });
   };
@@ -426,6 +432,21 @@ export default function AdminPage() {
                     ))}
                   </select>
                 </div>
+                <div>
+                  <label htmlFor="finishSqftPrice" className="block text-sm font-medium text-gray-700">
+                    Price per Square Foot*
+                  </label>
+                  <input
+                    type="number"
+                    id="finishSqftPrice"
+                    value={newFinish.sqftPrice}
+                    onChange={(e) => setNewFinish({...newFinish, sqftPrice: parseFloat(e.target.value)})}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    min="0"
+                    step="0.01"
+                    required
+                  />
+                </div>
                 <div className="flex space-x-4">
                   <button
                     type="submit"
@@ -454,6 +475,7 @@ export default function AdminPage() {
                         <div>
                           <span className="text-gray-900">{finish.name}</span>
                           <span className="ml-2 text-gray-500">{finish.manufacturer}</span>
+                          <span className="ml-2 text-gray-500">${finish.sqftPrice.toFixed(2)}/sqft</span>
                         </div>
                         <div className="flex space-x-2">
                           <button

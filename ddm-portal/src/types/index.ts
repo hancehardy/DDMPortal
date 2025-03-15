@@ -38,6 +38,7 @@ export interface DoorStyle {
 export interface Finish {
   name: string;
   manufacturer: string;
+  sqftPrice: number;
 }
 
 export interface GlassType {

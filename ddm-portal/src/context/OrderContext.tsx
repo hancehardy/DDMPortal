@@ -66,10 +66,10 @@ const mockDoorStyles: DoorStyle[] = [
 ];
 
 const mockFinishes: Finish[] = [
-  { name: 'White', manufacturer: 'Sherwin Williams' },
-  { name: 'Oak', manufacturer: 'Natural Wood' },
-  { name: 'Cherry', manufacturer: 'Natural Wood' },
-  { name: 'Maple', manufacturer: 'Natural Wood' }
+  { name: 'White', manufacturer: 'Sherwin Williams', sqftPrice: 12.50 },
+  { name: 'Oak', manufacturer: 'Natural Wood', sqftPrice: 15.75 },
+  { name: 'Cherry', manufacturer: 'Natural Wood', sqftPrice: 18.25 },
+  { name: 'Maple', manufacturer: 'Natural Wood', sqftPrice: 16.50 }
 ];
 
 const mockGlassTypes: GlassType[] = [
