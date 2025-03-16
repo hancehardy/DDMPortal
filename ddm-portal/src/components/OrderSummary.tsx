@@ -2,23 +2,18 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useOrder } from '@/context/OrderContext';
 import { v4 as uuidv4 } from 'uuid';
+import { calculateTotalItems, calculateTotalSqFt, calculateTotalPrice } from '@/utils/priceUtils';
 
 const OrderSummary: React.FC = () => {
   const router = useRouter();
-  const { orderData } = useOrder();
+  const { orderData, finishes, glassTypes } = useOrder();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [submitError, setSubmitError] = useState('');
 
-  const calculateTotalItems = () => {
-    return orderData.items.reduce((total, item) => total + item.qty, 0);
-  };
-
-  const calculateTotalSqFt = () => {
-    return orderData.items.reduce((total, item) => {
-      const itemSqFt = (item.width * item.height * item.qty) / 144; // Convert to square feet if in inches
-      return total + (isNaN(itemSqFt) ? 0 : itemSqFt);
-    }, 0);
+  const getFinishPrice = () => {
+    const selectedFinish = finishes.find(finish => finish.name === orderData.color);
+    return selectedFinish?.sqftPrice || 0;
   };
 
   const handleSubmit = async () => {
@@ -33,14 +28,20 @@ const OrderSummary: React.FC = () => {
       // Generate a unique ID for the order
       const orderId = uuidv4();
       
+      // Calculate totals
+      const totalItems = calculateTotalItems(orderData.items);
+      const totalSqFt = calculateTotalSqFt(orderData.items);
+      const totalPrice = calculateTotalPrice(orderData.items, finishes, glassTypes, orderData.color);
+      
       // Add additional order metadata
       const completeOrder = {
         ...orderData,
         id: orderId,
         orderDate: new Date().toISOString().split('T')[0],
         status: 'Pending',
-        totalItems: calculateTotalItems(),
-        totalSqFt: calculateTotalSqFt()
+        totalItems,
+        totalSqFt,
+        totalPrice
       };
       
       // Save to localStorage
@@ -73,14 +74,20 @@ const OrderSummary: React.FC = () => {
       // Generate a unique ID for the draft
       const draftId = uuidv4();
       
+      // Calculate totals
+      const totalItems = calculateTotalItems(orderData.items);
+      const totalSqFt = calculateTotalSqFt(orderData.items);
+      const totalPrice = calculateTotalPrice(orderData.items, finishes, glassTypes, orderData.color);
+      
       // Add additional order metadata
       const draftOrder = {
         ...orderData,
         id: draftId,
         orderDate: new Date().toISOString().split('T')[0],
         status: 'Draft',
-        totalItems: calculateTotalItems(),
-        totalSqFt: calculateTotalSqFt()
+        totalItems,
+        totalSqFt,
+        totalPrice
       };
       
       // Save to localStorage
@@ -127,12 +134,14 @@ const OrderSummary: React.FC = () => {
           <h3 className="text-lg font-medium text-gray-700">Order Totals</h3>
           <div className="mt-2 grid grid-cols-2 gap-4">
             <div>
-              <p className="text-gray-600">Total Items: {calculateTotalItems()}</p>
-              <p className="text-gray-600">Total Sq. Ft: {calculateTotalSqFt().toFixed(2)}</p>
+              <p className="text-gray-600">Total Items: {calculateTotalItems(orderData.items)}</p>
+              <p className="text-gray-600">Total Sq. Ft: {calculateTotalSqFt(orderData.items).toFixed(2)}</p>
+              <p className="text-gray-600">Total Price: ${calculateTotalPrice(orderData.items, finishes, glassTypes, orderData.color).toFixed(2)}</p>
             </div>
             <div>
               <p className="text-gray-600">Door Style: {orderData.doorStyle || 'Not specified'}</p>
               <p className="text-gray-600">Color: {orderData.color || 'Not specified'}</p>
+              <p className="text-gray-600">Finish Price: ${getFinishPrice().toFixed(2)}/sq.ft</p>
             </div>
           </div>
         </div>

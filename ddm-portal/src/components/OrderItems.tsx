@@ -2,9 +2,10 @@
 
 import React from 'react';
 import { useOrder } from '@/context/OrderContext';
+import { calculateItemPrice } from '@/utils/priceUtils';
 
 const OrderItems: React.FC = () => {
-  const { orderData, updateOrderItem, addOrderItem, removeOrderItem, glassTypes, isLoading } = useOrder();
+  const { orderData, updateOrderItem, addOrderItem, removeOrderItem, glassTypes, finishes, isLoading } = useOrder();
 
   const handleChange = (id: string, field: string, value: string | number) => {
     updateOrderItem(id, { [field]: value });
@@ -12,6 +13,32 @@ const OrderItems: React.FC = () => {
 
   const handleCheckboxChange = (id: string, field: string, checked: boolean) => {
     updateOrderItem(id, { [field]: checked });
+  };
+
+  const getFinishPrice = () => {
+    const selectedFinish = finishes.find(finish => finish.name === orderData.color);
+    return selectedFinish?.sqftPrice || 0;
+  };
+
+  const getGlassTypePrice = (glassType: string) => {
+    const selectedGlassType = glassTypes.find(glass => glass.name === glassType);
+    return selectedGlassType?.sqftPrice || 0;
+  };
+
+  const calculateItemPrice = (item: any) => {
+    const itemSqFt = (item.width * item.height * item.qty) / 144;
+    if (isNaN(itemSqFt) || itemSqFt <= 0) return 0;
+
+    const finishPrice = getFinishPrice();
+    let totalPricePerSqFt = finishPrice;
+
+    // Add glass price if glass is selected
+    if (item.glass && item.glassType) {
+      const glassPrice = getGlassTypePrice(item.glassType);
+      totalPricePerSqFt += glassPrice;
+    }
+
+    return itemSqFt * totalPricePerSqFt;
   };
 
   if (isLoading) {
@@ -30,6 +57,7 @@ const OrderItems: React.FC = () => {
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-semibold text-blue-800">Order Items</h2>
         <button
+          type="button"
           onClick={addOrderItem}
           className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
         >
@@ -58,6 +86,9 @@ const OrderItems: React.FC = () => {
               </th>
               <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Notes
+              </th>
+              <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Price
               </th>
               <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Actions
@@ -142,8 +173,12 @@ const OrderItems: React.FC = () => {
                     className="w-32 px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </td>
+                <td className="px-3 py-4 whitespace-nowrap text-gray-800">
+                  ${calculateItemPrice(item, finishes, glassTypes, orderData.color).toFixed(2)}
+                </td>
                 <td className="px-3 py-4 whitespace-nowrap">
                   <button
+                    type="button"
                     onClick={() => removeOrderItem(item.id)}
                     className="text-red-600 hover:text-red-900"
                     disabled={orderData.items.length <= 1}

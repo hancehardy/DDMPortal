@@ -3,8 +3,9 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { OrderFormData } from '@/types';
+import { OrderFormData, Finish, GlassType } from '@/types';
 import Layout from '@/components/Layout';
+import { calculateTotalItems, calculateTotalSqFt, calculateTotalPrice, calculateItemPrice } from '@/utils/priceUtils';
 
 interface OrderViewClientProps {
   id: string;
@@ -14,6 +15,31 @@ const OrderViewClient: React.FC<OrderViewClientProps> = ({ id }) => {
   const router = useRouter();
   const [order, setOrder] = useState<OrderFormData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [finishes, setFinishes] = useState<Finish[]>([]);
+  const [glassTypes, setGlassTypes] = useState<GlassType[]>([]);
+
+  useEffect(() => {
+    // Fetch finishes and glass types
+    const fetchReferenceData = async () => {
+      try {
+        // In a real app, this would be an API call
+        // For now, we'll simulate by getting from localStorage
+        const savedFinishes = localStorage.getItem('finishes');
+        if (savedFinishes) {
+          setFinishes(JSON.parse(savedFinishes));
+        }
+
+        const savedGlassTypes = localStorage.getItem('glassTypes');
+        if (savedGlassTypes) {
+          setGlassTypes(JSON.parse(savedGlassTypes));
+        }
+      } catch (error) {
+        console.error('Error fetching reference data:', error);
+      }
+    };
+
+    fetchReferenceData();
+  }, []);
 
   useEffect(() => {
     // In a real app, this would fetch from an API
@@ -135,14 +161,10 @@ const OrderViewClient: React.FC<OrderViewClientProps> = ({ id }) => {
     );
   }
 
-  // Calculate total items
-  const totalItems = order.items.reduce((sum, item) => sum + item.qty, 0);
-  
-  // Calculate total square footage
-  const totalSqFt = order.items.reduce((sum, item) => {
-    const itemSqFt = (item.width * item.height * item.qty) / 144; // Convert to square feet
-    return sum + itemSqFt;
-  }, 0);
+  // Calculate totals using the shared utility functions
+  const totalItems = calculateTotalItems(order.items);
+  const totalSqFt = calculateTotalSqFt(order.items);
+  const totalPrice = calculateTotalPrice(order.items, finishes, glassTypes, order.color);
 
   return (
     <Layout>
@@ -270,35 +292,46 @@ const OrderViewClient: React.FC<OrderViewClientProps> = ({ id }) => {
                   <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Notes
                   </th>
+                  <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Price
+                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {order.items.map((item) => (
-                  <tr key={item.id}>
-                    <td className="px-3 py-4 whitespace-nowrap text-gray-800">
-                      {item.qty}
-                    </td>
-                    <td className="px-3 py-4 whitespace-nowrap text-gray-800">
-                      {item.width} {order.measurementUnit}
-                    </td>
-                    <td className="px-3 py-4 whitespace-nowrap text-gray-800">
-                      {item.height} {order.measurementUnit}
-                    </td>
-                    <td className="px-3 py-4 whitespace-nowrap">
-                      <ul className="text-gray-800">
-                        {item.bore && <li>Bore</li>}
-                        {item.centerRail && <li>Center Rail</li>}
-                        {item.glass && <li>Glass</li>}
-                      </ul>
-                    </td>
-                    <td className="px-3 py-4 whitespace-nowrap text-gray-800">
-                      {item.glass ? (item.glassType || 'Standard') : 'N/A'}
-                    </td>
-                    <td className="px-3 py-4 whitespace-nowrap text-gray-800">
-                      {item.notes || 'N/A'}
-                    </td>
-                  </tr>
-                ))}
+                {order.items.map((item) => {
+                  // Use the shared utility function for item price calculation
+                  const itemPrice = calculateItemPrice(item, finishes, glassTypes, order.color);
+                    
+                  return (
+                    <tr key={item.id}>
+                      <td className="px-3 py-4 whitespace-nowrap text-gray-800">
+                        {item.qty}
+                      </td>
+                      <td className="px-3 py-4 whitespace-nowrap text-gray-800">
+                        {item.width} {order.measurementUnit}
+                      </td>
+                      <td className="px-3 py-4 whitespace-nowrap text-gray-800">
+                        {item.height} {order.measurementUnit}
+                      </td>
+                      <td className="px-3 py-4 whitespace-nowrap">
+                        <ul className="text-gray-800">
+                          {item.bore && <li>Bore</li>}
+                          {item.centerRail && <li>Center Rail</li>}
+                          {item.glass && <li>Glass</li>}
+                        </ul>
+                      </td>
+                      <td className="px-3 py-4 whitespace-nowrap text-gray-800">
+                        {item.glass ? (item.glassType || 'Standard') : 'N/A'}
+                      </td>
+                      <td className="px-3 py-4 whitespace-nowrap text-gray-800">
+                        {item.notes || 'N/A'}
+                      </td>
+                      <td className="px-3 py-4 whitespace-nowrap text-gray-800">
+                        ${itemPrice.toFixed(2)}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -315,6 +348,15 @@ const OrderViewClient: React.FC<OrderViewClientProps> = ({ id }) => {
             <div>
               <p className="text-sm font-medium text-gray-500">Total Square Footage</p>
               <p className="text-xl font-semibold text-gray-800">{totalSqFt.toFixed(2)} sq ft</p>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-500">Total Price</p>
+              <p className="text-xl font-semibold text-gray-800">${totalPrice.toFixed(2)}</p>
+              {order.totalPrice && Math.abs(totalPrice - order.totalPrice) > 0.01 && (
+                <p className="text-sm text-gray-500">
+                  (Stored price: ${order.totalPrice.toFixed(2)})
+                </p>
+              )}
             </div>
           </div>
         </div>

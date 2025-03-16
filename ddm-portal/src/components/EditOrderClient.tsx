@@ -9,6 +9,7 @@ import OrderItems from '@/components/OrderItems';
 import { useOrder } from '@/context/OrderContext';
 import { OrderFormData } from '@/types';
 import Link from 'next/link';
+import { calculateTotalItems, calculateTotalSqFt, calculateTotalPrice } from '@/utils/priceUtils';
 
 interface EditOrderClientProps {
   id: string;
@@ -16,7 +17,7 @@ interface EditOrderClientProps {
 
 const EditOrderClient: React.FC<EditOrderClientProps> = ({ id }) => {
   const router = useRouter();
-  const { updateOrderData, orderData, isLoading } = useOrder();
+  const { updateOrderData, orderData, isLoading, finishes, glassTypes } = useOrder();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
@@ -119,17 +120,31 @@ const EditOrderClient: React.FC<EditOrderClientProps> = ({ id }) => {
       // In a real app, you would send the updated order data to your backend
       await new Promise(resolve => setTimeout(resolve, 1000));
       
+      // Calculate totals using the shared utility functions
+      const totalItems = calculateTotalItems(orderData.items);
+      const totalSqFt = calculateTotalSqFt(orderData.items);
+      const totalPrice = calculateTotalPrice(orderData.items, finishes, glassTypes, orderData.color);
+      
+      // Create updated order with recalculated totals
+      const updatedOrder = {
+        ...orderData,
+        id,
+        totalItems,
+        totalSqFt,
+        totalPrice
+      };
+      
       // Update the order in localStorage
       const savedOrders = localStorage.getItem('savedOrders');
       if (savedOrders) {
         const orders = JSON.parse(savedOrders);
         const updatedOrders = orders.map((o: OrderFormData) => 
-          o.id === id ? { ...orderData, id } : o
+          o.id === id ? updatedOrder : o
         );
         localStorage.setItem('savedOrders', JSON.stringify(updatedOrders));
       } else {
         // If no orders exist yet, create a new array with this order
-        const newOrders = [{ ...orderData, id }];
+        const newOrders = [updatedOrder];
         localStorage.setItem('savedOrders', JSON.stringify(newOrders));
       }
       
