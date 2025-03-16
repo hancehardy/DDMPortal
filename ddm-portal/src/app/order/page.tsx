@@ -7,6 +7,7 @@ import OrderDetails from '@/components/OrderDetails';
 import OrderItems from '@/components/OrderItems';
 import OrderSummary from '@/components/OrderSummary';
 import { useOrder } from '@/context/OrderContext';
+import ProtectedRoute from '@/components/ProtectedRoute';
 
 export default function OrderPage() {
   const { isLoading } = useOrder();
@@ -25,24 +26,26 @@ export default function OrderPage() {
   }
 
   return (
-    <Layout>
-      <div className="max-w-6xl mx-auto">
-        <h1 className="text-3xl font-bold text-blue-800 mb-6">New Cabinet Door Order</h1>
-        
-        <div className="mb-8">
-          <p className="text-gray-600">
-            Please fill out the form below to place your order for custom cabinet doors. 
-            All fields marked with an asterisk (*) are required.
-          </p>
+    <ProtectedRoute>
+      <Layout>
+        <div className="max-w-6xl mx-auto">
+          <h1 className="text-3xl font-bold text-blue-800 mb-6">New Cabinet Door Order</h1>
+          
+          <div className="mb-8">
+            <p className="text-gray-600">
+              Please fill out the form below to place your order for custom cabinet doors. 
+              All fields marked with an asterisk (*) are required.
+            </p>
+          </div>
+          
+          <form>
+            <CustomerInfo />
+            <OrderDetails />
+            <OrderItems />
+            <OrderSummary />
+          </form>
         </div>
-        
-        <form>
-          <CustomerInfo />
-          <OrderDetails />
-          <OrderItems />
-          <OrderSummary />
-        </form>
-      </div>
-    </Layout>
+      </Layout>
+    </ProtectedRoute>
   );
 } 
