@@ -57,7 +57,10 @@ export default function AdminPage() {
     try {
       if (newDoorStyle.name) {
         if (editingIndex !== null) {
-          updateDoorStyle(editingIndex, {
+          if (!doorStyles[editingIndex].id) {
+            throw new Error("Door style ID is missing");
+          }
+          updateDoorStyle(doorStyles[editingIndex].id as string, {
             name: newDoorStyle.name,
             available: newDoorStyle.available ?? true
           });
@@ -89,7 +92,10 @@ export default function AdminPage() {
     try {
       if (newFinish.name && newFinish.manufacturer && newFinish.sqftPrice !== undefined) {
         if (editingIndex !== null) {
-          updateFinish(editingIndex, {
+          if (!finishes[editingIndex].id) {
+            throw new Error("Finish ID is missing");
+          }
+          updateFinish(finishes[editingIndex].id as string, {
             name: newFinish.name,
             manufacturer: newFinish.manufacturer,
             sqftPrice: newFinish.sqftPrice
@@ -123,7 +129,10 @@ export default function AdminPage() {
     try {
       if (newGlassType.name && newGlassType.sqftPrice !== undefined && newGlassType.sqftMinimum !== undefined) {
         if (editingIndex !== null) {
-          updateGlassType(editingIndex, {
+          if (!glassTypes[editingIndex].id) {
+            throw new Error("Glass type ID is missing");
+          }
+          updateGlassType(glassTypes[editingIndex].id as string, {
             name: newGlassType.name,
             sqftPrice: newGlassType.sqftPrice,
             sqftMinimum: newGlassType.sqftMinimum
@@ -154,7 +163,10 @@ export default function AdminPage() {
     try {
       if (newManufacturer.name) {
         if (editingIndex !== null) {
-          updateManufacturer(editingIndex, {
+          if (!manufacturers[editingIndex].id) {
+            throw new Error("Manufacturer ID is missing");
+          }
+          updateManufacturer(manufacturers[editingIndex].id as string, {
             name: newManufacturer.name
           });
           setSuccessMessage(`Manufacturer "${newManufacturer.name}" updated successfully!`);
@@ -183,16 +195,16 @@ export default function AdminPage() {
     setEditingIndex(index);
     switch (type) {
       case 'doorStyles':
-        setNewDoorStyle(doorStyles[index]);
+        setNewDoorStyle({...doorStyles[index], id: doorStyles[index].id});
         break;
       case 'finishes':
-        setNewFinish(finishes[index]);
+        setNewFinish({...finishes[index], id: finishes[index].id});
         break;
       case 'glassTypes':
-        setNewGlassType(glassTypes[index]);
+        setNewGlassType({...glassTypes[index], id: glassTypes[index].id});
         break;
       case 'manufacturers':
-        setNewManufacturer(manufacturers[index]);
+        setNewManufacturer({...manufacturers[index], id: manufacturers[index].id});
         break;
     }
   };
@@ -201,19 +213,31 @@ export default function AdminPage() {
     try {
       switch (type) {
         case 'doorStyles':
-          deleteDoorStyle(index);
+          if (!doorStyles[index].id) {
+            throw new Error("Door style ID is missing");
+          }
+          deleteDoorStyle(doorStyles[index].id as string);
           setSuccessMessage(`Door style deleted successfully!`);
           break;
         case 'finishes':
-          deleteFinish(index);
+          if (!finishes[index].id) {
+            throw new Error("Finish ID is missing");
+          }
+          deleteFinish(finishes[index].id as string);
           setSuccessMessage(`Finish deleted successfully!`);
           break;
         case 'glassTypes':
-          deleteGlassType(index);
+          if (!glassTypes[index].id) {
+            throw new Error("Glass type ID is missing");
+          }
+          deleteGlassType(glassTypes[index].id as string);
           setSuccessMessage(`Glass type deleted successfully!`);
           break;
         case 'manufacturers':
-          deleteManufacturer(index);
+          if (!manufacturers[index].id) {
+            throw new Error("Manufacturer ID is missing");
+          }
+          deleteManufacturer(manufacturers[index].id as string);
           setSuccessMessage(`Manufacturer deleted successfully!`);
           break;
       }
