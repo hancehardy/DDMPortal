@@ -17,6 +17,7 @@ export interface OrderFormData {
   status?: 'Pending' | 'In Production' | 'Completed' | 'Draft';
   totalItems?: number;
   totalSqFt?: number;
+  totalPrice?: number;
 }
 
 export interface OrderItem {
@@ -31,28 +32,33 @@ export interface OrderItem {
 }
 
 export interface DoorStyle {
+  id?: string;
   name: string;
   available: boolean;
 }
 
 export interface Finish {
+  id?: string;
   name: string;
   manufacturer: string;
   sqftPrice: number;
 }
 
 export interface GlassType {
+  id?: string;
   name: string;
   sqftPrice: number;
   sqftMinimum: number;
 }
 
 export interface SizeParameter {
+  id?: string;
   name: string;
   inches: number;
   mm: number;
 }
 
 export interface Manufacturer {
+  id?: string;
   name: string;
 } 

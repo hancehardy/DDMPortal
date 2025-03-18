@@ -7,10 +7,16 @@ import OrderDetails from '@/components/OrderDetails';
 import OrderItems from '@/components/OrderItems';
 import OrderSummary from '@/components/OrderSummary';
 import { useOrder } from '@/context/OrderContext';
-import ProtectedRoute from '@/components/ProtectedRoute';
+import { useAuth } from '@/context/AuthContext';
+import Link from 'next/link';
 
 export default function OrderPage() {
   const { isLoading } = useOrder();
+  const { isAuthenticated } = useAuth();
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault(); // Prevent form submission
+  };
 
   if (isLoading) {
     return (
@@ -26,26 +32,35 @@ export default function OrderPage() {
   }
 
   return (
-    <ProtectedRoute>
-      <Layout>
-        <div className="max-w-6xl mx-auto">
-          <h1 className="text-3xl font-bold text-blue-800 mb-6">New Cabinet Door Order</h1>
-          
-          <div className="mb-8">
-            <p className="text-gray-600">
-              Please fill out the form below to place your order for custom cabinet doors. 
-              All fields marked with an asterisk (*) are required.
-            </p>
-          </div>
-          
-          <form>
-            <CustomerInfo />
-            <OrderDetails />
-            <OrderItems />
-            <OrderSummary />
-          </form>
+    <Layout>
+      <div className="max-w-6xl mx-auto">
+        <h1 className="text-3xl font-bold text-blue-800 mb-6">New Cabinet Door Order</h1>
+        
+        <div className="mb-8">
+          <p className="text-gray-600">
+            Please fill out the form below to place your order for custom cabinet doors. 
+            All fields marked with an asterisk (*) are required.
+          </p>
+          {!isAuthenticated && (
+            <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-md">
+              <p className="text-blue-800">
+                You're checking out as a guest. Would you like to{' '}
+                <Link href="/register" className="text-blue-600 hover:text-blue-800 underline">
+                  create an account
+                </Link>{' '}
+                to save your information for future orders?
+              </p>
+            </div>
+          )}
         </div>
-      </Layout>
-    </ProtectedRoute>
+        
+        <form onSubmit={handleSubmit}>
+          <CustomerInfo />
+          <OrderDetails />
+          <OrderItems />
+          <OrderSummary />
+        </form>
+      </div>
+    </Layout>
   );
 } 

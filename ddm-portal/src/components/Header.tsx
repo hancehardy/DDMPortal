@@ -82,6 +82,13 @@ const Header: React.FC = () => {
                       <div className="font-medium">{user?.name}</div>
                       <div className="text-gray-500">{user?.email}</div>
                     </div>
+                    <Link
+                      href="/account"
+                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      onClick={() => setDropdownOpen(false)}
+                    >
+                      Account Settings
+                    </Link>
                     <button
                       onClick={() => {
                         setDropdownOpen(false);

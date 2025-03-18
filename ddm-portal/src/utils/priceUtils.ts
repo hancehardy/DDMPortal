@@ -1,6 +1,13 @@
 import { OrderItem, Finish, GlassType } from '@/types';
 
 /**
+ * Check if an order item has valid dimensions
+ */
+export const isValidItem = (item: OrderItem): boolean => {
+  return item.width > 0 && item.height > 0 && item.qty > 0;
+};
+
+/**
  * Calculate the price of a single order item
  */
 export const calculateItemPrice = (
@@ -9,6 +16,8 @@ export const calculateItemPrice = (
   glassTypes: GlassType[],
   selectedColor: string
 ): number => {
+  if (!isValidItem(item)) return 0;
+  
   const itemSqFt = (item.width * item.height * item.qty) / 144;
   if (isNaN(itemSqFt) || itemSqFt <= 0) return 0;
 
@@ -35,7 +44,8 @@ export const calculateTotalPrice = (
   glassTypes: GlassType[],
   selectedColor: string
 ): number => {
-  return items.reduce((total, item) => {
+  const validItems = items.filter(isValidItem);
+  return validItems.reduce((total, item) => {
     return total + calculateItemPrice(item, finishes, glassTypes, selectedColor);
   }, 0);
 };
@@ -44,7 +54,8 @@ export const calculateTotalPrice = (
  * Calculate the total square footage of all order items
  */
 export const calculateTotalSqFt = (items: OrderItem[]): number => {
-  return items.reduce((total, item) => {
+  const validItems = items.filter(isValidItem);
+  return validItems.reduce((total, item) => {
     const itemSqFt = (item.width * item.height * item.qty) / 144;
     return total + (isNaN(itemSqFt) ? 0 : itemSqFt);
   }, 0);
@@ -54,5 +65,6 @@ export const calculateTotalSqFt = (items: OrderItem[]): number => {
  * Calculate the total number of items
  */
 export const calculateTotalItems = (items: OrderItem[]): number => {
-  return items.reduce((total, item) => total + item.qty, 0);
+  const validItems = items.filter(isValidItem);
+  return validItems.reduce((total, item) => total + item.qty, 0);
 }; 

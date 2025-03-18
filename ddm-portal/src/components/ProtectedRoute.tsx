@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 
@@ -12,16 +12,28 @@ interface ProtectedRouteProps {
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, adminOnly = false }) => {
   const { isAuthenticated, isAdmin, isLoading } = useAuth();
   const router = useRouter();
+  const [isMounted, setIsMounted] = useState(false);
+
+  // Set mounted state after hydration
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   useEffect(() => {
-    if (!isLoading) {
+    if (!isLoading && isMounted) {
       if (!isAuthenticated) {
         router.push('/login');
       } else if (adminOnly && !isAdmin) {
         router.push('/'); // Redirect non-admin users to home page
       }
     }
-  }, [isAuthenticated, isAdmin, isLoading, router, adminOnly]);
+  }, [isAuthenticated, isAdmin, isLoading, router, adminOnly, isMounted]);
+
+  // Don't render anything during server-side rendering or before hydration
+  // This prevents hydration mismatch
+  if (!isMounted) {
+    return null;
+  }
 
   // Show loading state while checking authentication
   if (isLoading) {

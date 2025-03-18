@@ -3,18 +3,35 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 
+interface CustomerInfo {
+  phone?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  company?: string;
+}
+
 interface User {
   id: string;
   email: string;
   name: string;
   role: 'user' | 'admin';
+  customerInfo?: CustomerInfo;
+}
+
+interface UserUpdateData {
+  name?: string;
+  email?: string;
+  customerInfo?: CustomerInfo;
 }
 
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<boolean>;
-  register: (name: string, email: string, password: string) => Promise<boolean>;
+  register: (name: string, email: string, password: string, customerInfo?: CustomerInfo) => Promise<boolean>;
+  updateUser: (data: UserUpdateData) => Promise<boolean>;
   logout: () => void;
   isAuthenticated: boolean;
   isAdmin: boolean;
@@ -35,14 +52,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
-  // Load user from localStorage on initial render
+  // Load user from localStorage on initial render - only on client side
   useEffect(() => {
     const loadUser = () => {
       setIsLoading(true);
       try {
-        const storedUser = localStorage.getItem('user');
-        if (storedUser) {
-          setUser(JSON.parse(storedUser));
+        // Only access localStorage on the client side
+        if (typeof window !== 'undefined') {
+          const storedUser = localStorage.getItem('user');
+          if (storedUser) {
+            setUser(JSON.parse(storedUser));
+          }
         }
       } catch (error) {
         console.error('Error loading user:', error);
@@ -94,7 +114,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           id: foundUser.id,
           email: foundUser.email,
           name: foundUser.name,
-          role: foundUser.role || 'user'
+          role: foundUser.role || 'user',
+          customerInfo: foundUser.customerInfo
         };
         setUser(loggedInUser);
         localStorage.setItem('user', JSON.stringify(loggedInUser));
@@ -111,7 +132,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   // Register function
-  const register = async (name: string, email: string, password: string): Promise<boolean> => {
+  const register = async (
+    name: string,
+    email: string,
+    password: string,
+    customerInfo?: CustomerInfo
+  ): Promise<boolean> => {
     setIsLoading(true);
     try {
       // In a real app, this would be an API call to your backend
@@ -120,31 +146,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Check if user already exists
       const users = JSON.parse(localStorage.getItem('users') || '[]');
       if (users.some((u: any) => u.email === email)) {
-        return false; // User already exists
+        return false;
       }
       
       // Create new user
-      const newUser = {
-        id: Date.now().toString(),
+      const newUser: User = {
+        id: Math.random().toString(36).substr(2, 9),
         email,
         name,
-        password, // In a real app, this would be hashed
-        role: 'user' as const
+        role: 'user',
+        customerInfo
       };
       
-      // Save to localStorage
-      users.push(newUser);
+      // Store user in localStorage (in a real app, this would be in your database)
+      users.push({
+        ...newUser,
+        password // In a real app, this would be hashed
+      });
       localStorage.setItem('users', JSON.stringify(users));
       
-      // Auto login after registration
-      const loggedInUser: User = {
-        id: newUser.id,
-        email: newUser.email,
-        name: newUser.name,
-        role: newUser.role
-      };
-      setUser(loggedInUser);
-      localStorage.setItem('user', JSON.stringify(loggedInUser));
+      // Set current user
+      setUser(newUser);
+      localStorage.setItem('user', JSON.stringify(newUser));
       
       return true;
     } catch (error) {
@@ -155,22 +178,86 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Update user function
+  const updateUser = async (data: UserUpdateData): Promise<boolean> => {
+    if (!user) return false;
+    
+    setIsLoading(true);
+    try {
+      // In a real app, this would be an API call to your backend
+      await new Promise(resolve => setTimeout(resolve, 800)); // Simulate API delay
+      
+      // Get users from localStorage
+      const users = JSON.parse(localStorage.getItem('users') || '[]');
+      
+      // Find the current user
+      const userIndex = users.findIndex((u: any) => u.id === user.id);
+      if (userIndex === -1) return false;
+      
+      // Check if email is being changed and it's already in use
+      if (data.email && data.email !== user.email) {
+        const emailExists = users.some((u: any, index: number) => 
+          index !== userIndex && u.email === data.email
+        );
+        if (emailExists) {
+          throw new Error('Email is already in use');
+        }
+      }
+      
+      // Update user data
+      const updatedUser = {
+        ...user,
+        ...data,
+        customerInfo: {
+          ...user.customerInfo,
+          ...data.customerInfo
+        }
+      };
+      
+      // Update in local storage
+      users[userIndex] = {
+        ...users[userIndex],
+        name: updatedUser.name,
+        email: updatedUser.email,
+        customerInfo: updatedUser.customerInfo
+      };
+      
+      localStorage.setItem('users', JSON.stringify(users));
+      
+      // Update current user
+      setUser(updatedUser);
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      
+      return true;
+    } catch (error) {
+      console.error('Update user error:', error);
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Logout function
   const logout = () => {
     setUser(null);
     localStorage.removeItem('user');
-    router.push('/login');
+    router.push('/');
   };
 
-  const value = {
-    user,
-    isLoading,
-    login,
-    register,
-    logout,
-    isAuthenticated: !!user,
-    isAdmin: user?.role === 'admin'
-  };
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        isLoading,
+        login,
+        register,
+        updateUser,
+        logout,
+        isAuthenticated: !!user,
+        isAdmin: user?.role === 'admin'
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
 } 
