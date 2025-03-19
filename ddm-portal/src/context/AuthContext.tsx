@@ -61,7 +61,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (typeof window !== 'undefined') {
           const storedUser = localStorage.getItem('user');
           if (storedUser) {
-            setUser(JSON.parse(storedUser));
+            const parsedUser = JSON.parse(storedUser);
+            setUser(parsedUser);
+            
+            // Debug user loading
+            console.log('[Auth] Loaded user from localStorage:', parsedUser);
+            console.log('[Auth] User role:', parsedUser.role);
+            console.log('[Auth] Is admin?', parsedUser.role === 'admin');
           }
         }
       } catch (error) {
@@ -90,6 +96,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           name: 'Admin User',
           role: 'admin'
         };
+        console.log('[Auth] Logging in as admin:', adminUser);
         setUser(adminUser);
         localStorage.setItem('user', JSON.stringify(adminUser));
         return true;
@@ -100,6 +107,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           name: 'Regular User',
           role: 'user'
         };
+        console.log('[Auth] Logging in as regular user:', regularUser);
         setUser(regularUser);
         localStorage.setItem('user', JSON.stringify(regularUser));
         return true;
@@ -117,6 +125,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           role: foundUser.role || 'user',
           customerInfo: foundUser.customerInfo
         };
+        console.log('[Auth] Logging in as registered user:', loggedInUser);
         setUser(loggedInUser);
         localStorage.setItem('user', JSON.stringify(loggedInUser));
         return true;
@@ -244,6 +253,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     router.push('/');
   };
 
+  // Compute isAuthenticated and isAdmin
+  const isAuthenticated = !!user;
+  const isAdmin = user?.role === 'admin';
+  
+  // Debug auth state on changes
+  useEffect(() => {
+    console.log('[Auth] Auth state updated:');
+    console.log('[Auth] User:', user);
+    console.log('[Auth] Is authenticated:', isAuthenticated);
+    console.log('[Auth] Is admin:', isAdmin);
+  }, [user, isAuthenticated, isAdmin]);
+
   return (
     <AuthContext.Provider
       value={{
@@ -253,8 +274,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         register,
         updateUser,
         logout,
-        isAuthenticated: !!user,
-        isAdmin: user?.role === 'admin'
+        isAuthenticated,
+        isAdmin
       }}
     >
       {children}

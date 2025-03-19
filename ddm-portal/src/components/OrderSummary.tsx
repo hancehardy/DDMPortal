@@ -3,6 +3,7 @@ import { useRouter } from 'next/navigation';
 import { useOrder } from '@/context/OrderContext';
 import { v4 as uuidv4 } from 'uuid';
 import { calculateTotalItems, calculateTotalSqFt, calculateTotalPrice, isValidItem } from '@/utils/priceUtils';
+import AddToCartButton from './AddToCartButton';
 
 const OrderSummary: React.FC = () => {
   const router = useRouter();
@@ -11,13 +12,30 @@ const OrderSummary: React.FC = () => {
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [submitError, setSubmitError] = useState('');
   
-  // Filter out items with no dimensions
+  // Filter out invalid items when displaying totals
   const validItems = orderData.items.filter(isValidItem);
   const hasValidItems = validItems.length > 0;
 
   const getFinishPrice = () => {
     const selectedFinish = finishes.find(finish => finish.name === orderData.color);
     return selectedFinish?.sqftPrice || 0;
+  };
+
+  const calculateItemPrice = (item: any) => {
+    const itemSqFt = (item.width * item.height * item.qty) / 144;
+    if (isNaN(itemSqFt) || itemSqFt <= 0) return 0;
+
+    const finishPrice = getFinishPrice();
+    let totalPricePerSqFt = finishPrice;
+
+    // Add glass price if glass is selected
+    if (item.glass && item.glassType) {
+      const selectedGlassType = glassTypes.find(glass => glass.name === item.glassType);
+      const glassPrice = selectedGlassType?.sqftPrice || 0;
+      totalPricePerSqFt += glassPrice;
+    }
+
+    return itemSqFt * totalPricePerSqFt;
   };
 
   const handleSubmit = async () => {
@@ -166,27 +184,39 @@ const OrderSummary: React.FC = () => {
             Your order has been submitted successfully! Redirecting to order details...
           </div>
         ) : (
-          <div className="mt-6 flex flex-col md:flex-row justify-end space-y-2 md:space-y-0 md:space-x-2">
+          <div className="mt-6 flex flex-col space-y-3">
             {submitError && (
-              <div className="p-4 bg-red-100 text-red-800 rounded-md mb-4 w-full">
+              <div className="p-4 bg-red-100 text-red-800 rounded-md w-full">
                 {submitError}
               </div>
             )}
-            <button
-              type="button"
-              onClick={handleSaveDraft}
-              className="px-6 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500"
-            >
-              Save Draft
-            </button>
-            <button
-              type="button"
-              onClick={handleSubmit}
-              disabled={isSubmitting || !hasValidItems}
-              className={`px-6 py-2 ${!hasValidItems ? 'bg-blue-300' : 'bg-blue-600 hover:bg-blue-700'} text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-blue-400`}
-            >
-              {isSubmitting ? 'Submitting...' : 'Submit Order'}
-            </button>
+            
+            <div className="flex flex-col md:flex-row justify-between gap-3">
+              <div className="flex flex-col sm:flex-row gap-2">
+                <button
+                  type="button"
+                  onClick={handleSaveDraft}
+                  className="px-6 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                >
+                  Save Draft
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSubmit}
+                  disabled={isSubmitting || !hasValidItems}
+                  className={`px-6 py-2 ${!hasValidItems ? 'bg-blue-300' : 'bg-blue-600 hover:bg-blue-700'} text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-blue-400`}
+                >
+                  {isSubmitting ? 'Submitting...' : 'Submit Order'}
+                </button>
+              </div>
+              
+              <AddToCartButton 
+                items={orderData.items}
+                doorStyle={orderData.doorStyle}
+                color={orderData.color}
+                calculateItemPrice={calculateItemPrice}
+              />
+            </div>
           </div>
         )}
       </div>
