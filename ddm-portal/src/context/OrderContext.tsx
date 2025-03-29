@@ -11,6 +11,7 @@ interface OrderContextType {
   addOrderItem: () => void;
   updateOrderItem: (id: string, data: Partial<OrderItem>) => void;
   removeOrderItem: (id: string) => void;
+  resetOrderData: () => void;
   doorStyles: DoorStyle[];
   finishes: Finish[];
   glassTypes: GlassType[];
@@ -128,6 +129,24 @@ export function OrderProvider({ children }: { children: ReactNode }) {
   // Order data functions
   const updateOrderData = (data: Partial<OrderFormData>) => {
     setOrderData(prev => ({ ...prev, ...data }));
+  };
+
+  // Function to reset order data back to defaults
+  const resetOrderData = () => {
+    setOrderData({
+      ...defaultOrderData,
+      items: [{
+        id: uuidv4(),
+        qty: 1,
+        width: 0,
+        height: 0,
+        centerRail: false,
+        glass: false,
+        glassType: '',
+        notes: ''
+      }]
+    });
+    console.log('[Order] Reset order data to defaults');
   };
 
   const addOrderItem = () => {
@@ -303,6 +322,7 @@ export function OrderProvider({ children }: { children: ReactNode }) {
     addOrderItem,
     updateOrderItem,
     removeOrderItem,
+    resetOrderData,
     doorStyles,
     finishes,
     glassTypes,

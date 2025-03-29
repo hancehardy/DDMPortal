@@ -189,12 +189,12 @@ export default function AdminUsersPage() {
     return (
       <Layout>
         <div className="flex flex-col items-center justify-center min-h-screen">
-          <h1 className="text-2xl font-bold mb-4">Access Denied</h1>
-          <p>You don't have permission to access this page.</p>
+          <h1 className="text-2xl font-bold mb-4 text-gray-800">Access Denied</h1>
+          <p className="text-gray-800">You don't have permission to access this page.</p>
           <div className="mt-4 p-4 bg-gray-100 rounded">
-            <p>Debug info:</p>
-            <p>User: {user ? JSON.stringify(user) : 'Not logged in'}</p>
-            <p>isAdmin: {isAdmin ? 'true' : 'false'}</p>
+            <p className="text-gray-800">Debug info:</p>
+            <p className="text-gray-800">User: {user ? JSON.stringify(user) : 'Not logged in'}</p>
+            <p className="text-gray-800">isAdmin: {isAdmin ? 'true' : 'false'}</p>
           </div>
         </div>
       </Layout>
@@ -204,27 +204,27 @@ export default function AdminUsersPage() {
   return (
     <Layout>
       <div className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold mb-6">User Management</h1>
+        <h1 className="text-3xl font-bold mb-6 text-gray-900">User Management</h1>
         
         {/* Filters */}
         <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium mb-2">Search</label>
+            <label className="block text-sm font-medium mb-2 text-gray-800">Search</label>
             <input
               type="text"
               placeholder="Search by name, email, or company"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full p-2 border rounded"
+              className="w-full p-2 border rounded text-gray-800"
             />
           </div>
           
           <div>
-            <label className="block text-sm font-medium mb-2">Status</label>
+            <label className="block text-sm font-medium mb-2 text-gray-800">Status</label>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full p-2 border rounded"
+              className="w-full p-2 border rounded text-gray-800"
             >
               <option value="">All Statuses</option>
               <option value="active">Active</option>
@@ -236,7 +236,7 @@ export default function AdminUsersPage() {
           <div className="flex items-end">
             <button 
               onClick={() => setSearchTerm('')}
-              className="bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-4 rounded"
+              className="bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-4 rounded font-medium"
             >
               Reset Filters
             </button>
@@ -250,49 +250,49 @@ export default function AdminUsersPage() {
           </div>
         ) : filteredUsers.length === 0 ? (
           <div className="bg-white p-8 rounded-lg shadow text-center">
-            <p className="text-xl">No users found</p>
+            <p className="text-xl text-gray-800">No users found</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full bg-white shadow-md rounded-lg overflow-hidden">
               <thead className="bg-gray-100">
                 <tr>
-                  <th className="py-3 px-4 text-left">Name</th>
-                  <th className="py-3 px-4 text-left">Email</th>
-                  <th className="py-3 px-4 text-left">Company</th>
-                  <th className="py-3 px-4 text-left">Last Login</th>
-                  <th className="py-3 px-4 text-left">Role</th>
-                  <th className="py-3 px-4 text-left">Status</th>
-                  <th className="py-3 px-4 text-left">Actions</th>
+                  <th className="py-3 px-4 text-left text-gray-800 font-semibold">Name</th>
+                  <th className="py-3 px-4 text-left text-gray-800 font-semibold">Email</th>
+                  <th className="py-3 px-4 text-left text-gray-800 font-semibold">Company</th>
+                  <th className="py-3 px-4 text-left text-gray-800 font-semibold">Last Login</th>
+                  <th className="py-3 px-4 text-left text-gray-800 font-semibold">Role</th>
+                  <th className="py-3 px-4 text-left text-gray-800 font-semibold">Status</th>
+                  <th className="py-3 px-4 text-left text-gray-800 font-semibold">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredUsers.map((user) => (
                   <tr key={user.id} className="border-b hover:bg-gray-50">
-                    <td className="py-3 px-4 font-medium">
+                    <td className="py-3 px-4 font-medium text-gray-800">
                       {user.name}
                     </td>
-                    <td className="py-3 px-4">
+                    <td className="py-3 px-4 text-gray-800">
                       {user.email}
                     </td>
-                    <td className="py-3 px-4">
+                    <td className="py-3 px-4 text-gray-800">
                       {user.company || 'N/A'}
                     </td>
-                    <td className="py-3 px-4">
+                    <td className="py-3 px-4 text-gray-800">
                       {user.lastLogin 
                         ? new Date(user.lastLogin).toLocaleString() 
                         : 'Never'
                       }
                     </td>
                     <td className="py-3 px-4">
-                      <span className={`inline-block px-2 py-1 rounded text-sm font-medium
+                      <span className={`inline-block px-2 py-1 rounded text-sm font-semibold
                         ${user.isAdmin ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'}
                       `}>
                         {user.isAdmin ? 'Admin' : 'Customer'}
                       </span>
                     </td>
                     <td className="py-3 px-4">
-                      <span className={`inline-block px-2 py-1 rounded text-sm font-medium
+                      <span className={`inline-block px-2 py-1 rounded text-sm font-semibold
                         ${user.status === 'active' ? 'bg-green-100 text-green-800' : ''}
                         ${user.status === 'inactive' ? 'bg-yellow-100 text-yellow-800' : ''}
                         ${user.status === 'blocked' ? 'bg-red-100 text-red-800' : ''}
@@ -304,13 +304,13 @@ export default function AdminUsersPage() {
                       <div className="flex space-x-2">
                         <button
                           onClick={() => handleEditUser(user)}
-                          className="text-blue-600 hover:text-blue-800"
+                          className="text-blue-600 hover:text-blue-800 font-medium"
                         >
                           Edit
                         </button>
                         <button
                           onClick={() => handleToggleAdmin(user.id)}
-                          className="text-purple-600 hover:text-purple-800"
+                          className="text-purple-600 hover:text-purple-800 font-medium"
                         >
                           {user.isAdmin ? 'Remove Admin' : 'Make Admin'}
                         </button>
@@ -323,7 +323,7 @@ export default function AdminUsersPage() {
                                 e.target.value = "";
                               }
                             }}
-                            className="border rounded p-1 text-sm"
+                            className="border rounded p-1 text-sm text-gray-800 font-medium"
                           >
                             <option value="">Change Status</option>
                             {user.status !== 'active' && <option value="active">Activate</option>}
@@ -344,51 +344,51 @@ export default function AdminUsersPage() {
         {editingUser && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg p-6 w-full max-w-md">
-              <h2 className="text-xl font-bold mb-4">Edit User</h2>
+              <h2 className="text-xl font-bold mb-4 text-gray-800">Edit User</h2>
               
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1">Name</label>
+                  <label className="block text-sm font-medium mb-1 text-gray-800">Name</label>
                   <input
                     type="text"
                     value={editingUser.name}
                     onChange={(e) => setEditingUser({...editingUser, name: e.target.value})}
-                    className="w-full p-2 border rounded"
+                    className="w-full p-2 border rounded text-gray-800"
                   />
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium mb-1">Email</label>
+                  <label className="block text-sm font-medium mb-1 text-gray-800">Email</label>
                   <input
                     type="email"
                     value={editingUser.email}
                     onChange={(e) => setEditingUser({...editingUser, email: e.target.value})}
-                    className="w-full p-2 border rounded"
+                    className="w-full p-2 border rounded text-gray-800"
                   />
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium mb-1">Phone</label>
+                  <label className="block text-sm font-medium mb-1 text-gray-800">Phone</label>
                   <input
                     type="text"
                     value={editingUser.phone || ''}
                     onChange={(e) => setEditingUser({...editingUser, phone: e.target.value})}
-                    className="w-full p-2 border rounded"
+                    className="w-full p-2 border rounded text-gray-800"
                   />
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium mb-1">Company</label>
+                  <label className="block text-sm font-medium mb-1 text-gray-800">Company</label>
                   <input
                     type="text"
                     value={editingUser.company || ''}
                     onChange={(e) => setEditingUser({...editingUser, company: e.target.value})}
-                    className="w-full p-2 border rounded"
+                    className="w-full p-2 border rounded text-gray-800"
                   />
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium mb-1">Role</label>
+                  <label className="block text-sm font-medium mb-1 text-gray-800">Role</label>
                   <div className="flex items-center space-x-2">
                     <input
                       type="checkbox"
@@ -396,16 +396,16 @@ export default function AdminUsersPage() {
                       onChange={(e) => setEditingUser({...editingUser, isAdmin: e.target.checked})}
                       className="h-4 w-4 text-blue-600 focus:ring-blue-500"
                     />
-                    <span>Admin</span>
+                    <span className="text-gray-800">Admin</span>
                   </div>
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium mb-1">Status</label>
+                  <label className="block text-sm font-medium mb-1 text-gray-800">Status</label>
                   <select
                     value={editingUser.status}
                     onChange={(e) => setEditingUser({...editingUser, status: e.target.value as any})}
-                    className="w-full p-2 border rounded"
+                    className="w-full p-2 border rounded text-gray-800"
                   >
                     <option value="active">Active</option>
                     <option value="inactive">Inactive</option>
@@ -417,13 +417,13 @@ export default function AdminUsersPage() {
               <div className="flex justify-end mt-6 space-x-2">
                 <button
                   onClick={() => setEditingUser(null)}
-                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100"
+                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-800 hover:bg-gray-100 font-medium"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleSaveEdit}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium"
                 >
                   Save Changes
                 </button>

@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import Layout from '@/components/Layout';
 import CustomerInfo from '@/components/CustomerInfo';
 import OrderDetails from '@/components/OrderDetails';
@@ -11,8 +11,17 @@ import { useAuth } from '@/context/AuthContext';
 import Link from 'next/link';
 
 export default function OrderPage() {
-  const { isLoading } = useOrder();
+  const { isLoading, resetOrderData } = useOrder();
   const { isAuthenticated } = useAuth();
+  const initialLoadRef = useRef(false);
+
+  // Reset order data when the page mounts, but only once
+  useEffect(() => {
+    if (!initialLoadRef.current) {
+      resetOrderData();
+      initialLoadRef.current = true;
+    }
+  }, [resetOrderData]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault(); // Prevent form submission

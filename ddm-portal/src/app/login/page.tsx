@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
@@ -17,10 +17,12 @@ export default function LoginPage() {
   const searchParams = useSearchParams();
   const redirect = searchParams.get('redirect') || '/';
   
-  // Redirect if already logged in
-  if (isAuthenticated) {
-    router.push(redirect);
-  }
+  // Move redirect logic to useEffect to avoid updating during render
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.push(redirect);
+    }
+  }, [isAuthenticated, router, redirect]);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

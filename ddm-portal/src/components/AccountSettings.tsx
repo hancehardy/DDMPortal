@@ -65,29 +65,23 @@ const AccountSettings: React.FC = () => {
         }
       };
 
-      const success = await updateUser(updateData);
+      await updateUser(updateData);
       
-      if (success) {
-        setMessage({ 
-          type: 'success', 
-          text: 'Your account information has been updated successfully! Redirecting to home page...'
-        });
-        
-        // Redirect to home page after a short delay
-        setTimeout(() => {
-          router.push('/');
-        }, 1500);
-      } else {
-        setMessage({ 
-          type: 'error', 
-          text: 'Failed to update your account information. Please try again.'
-        });
-      }
+      setMessage({ 
+        type: 'success', 
+        text: 'Your account information has been updated successfully! Redirecting to home page...'
+      });
+      
+      // Redirect to home page after a short delay
+      setTimeout(() => {
+        router.push('/');
+      }, 1500);
     } catch (error) {
       setMessage({ 
         type: 'error', 
-        text: error instanceof Error ? error.message : 'An unexpected error occurred'
+        text: error instanceof Error ? error.message : 'Failed to update your account information. Please try again.'
       });
+      console.error('Error updating user:', error);
     } finally {
       setIsSubmitting(false);
     }

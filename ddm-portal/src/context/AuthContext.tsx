@@ -87,34 +87,70 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // In a real app, this would be an API call to your backend
       await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API delay
       
+      // Get existing users to check for saved profile information
+      const users = JSON.parse(localStorage.getItem('users') || '[]');
+      
       // For demo purposes, we'll use a simple check
       // In a real app, this would validate against your backend
       if (email === 'admin@example.com' && password === 'password') {
+        // Check if this user has any saved profile in the users array
+        const savedUser = users.find((u: any) => u.email === email);
+        
         const adminUser: User = {
           id: '1',
           email: 'admin@example.com',
           name: 'Admin User',
-          role: 'admin'
+          role: 'admin',
+          // Use saved customer info if it exists
+          customerInfo: savedUser?.customerInfo || undefined
         };
+        
         console.log('[Auth] Logging in as admin:', adminUser);
         setUser(adminUser);
         localStorage.setItem('user', JSON.stringify(adminUser));
+        
+        // Make sure this user exists in the users array for future updates
+        if (!savedUser) {
+          // Add user to users array if not already there
+          users.push({
+            ...adminUser,
+            password // In a real app, this would be hashed
+          });
+          localStorage.setItem('users', JSON.stringify(users));
+        }
+        
         return true;
       } else if (email === 'user@example.com' && password === 'password') {
+        // Check if this user has any saved profile in the users array
+        const savedUser = users.find((u: any) => u.email === email);
+        
         const regularUser: User = {
           id: '2',
           email: 'user@example.com',
           name: 'Regular User',
-          role: 'user'
+          role: 'user',
+          // Use saved customer info if it exists
+          customerInfo: savedUser?.customerInfo || undefined
         };
+        
         console.log('[Auth] Logging in as regular user:', regularUser);
         setUser(regularUser);
         localStorage.setItem('user', JSON.stringify(regularUser));
+        
+        // Make sure this user exists in the users array for future updates
+        if (!savedUser) {
+          // Add user to users array if not already there
+          users.push({
+            ...regularUser,
+            password // In a real app, this would be hashed
+          });
+          localStorage.setItem('users', JSON.stringify(users));
+        }
+        
         return true;
       }
       
       // Check if user exists in localStorage (for newly registered users)
-      const users = JSON.parse(localStorage.getItem('users') || '[]');
       const foundUser = users.find((u: any) => u.email === email);
       
       if (foundUser && foundUser.password === password) {
@@ -199,20 +235,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Get users from localStorage
       const users = JSON.parse(localStorage.getItem('users') || '[]');
       
-      // Find the current user
-      const userIndex = users.findIndex((u: any) => u.id === user.id);
-      if (userIndex === -1) return false;
-      
-      // Check if email is being changed and it's already in use
-      if (data.email && data.email !== user.email) {
-        const emailExists = users.some((u: any, index: number) => 
-          index !== userIndex && u.email === data.email
-        );
-        if (emailExists) {
-          throw new Error('Email is already in use');
-        }
-      }
-      
       // Update user data
       const updatedUser = {
         ...user,
@@ -223,24 +245,51 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       };
       
-      // Update in local storage
-      users[userIndex] = {
-        ...users[userIndex],
-        name: updatedUser.name,
-        email: updatedUser.email,
-        customerInfo: updatedUser.customerInfo
-      };
+      console.log('[Auth] Updating user:', updatedUser);
       
+      // Update in the users array to ensure persistence between sessions
+      const userIndex = users.findIndex((u: any) => u.email === user.email);
+      
+      if (userIndex !== -1) {
+        // Check if email is being changed and it's already in use
+        if (data.email && data.email !== user.email) {
+          const emailExists = users.some((u: any, index: number) => 
+            index !== userIndex && u.email === data.email
+          );
+          if (emailExists) {
+            throw new Error('Email is already in use');
+          }
+        }
+        
+        // Update user in the users array
+        users[userIndex] = {
+          ...users[userIndex],
+          name: updatedUser.name,
+          email: updatedUser.email,
+          customerInfo: updatedUser.customerInfo
+        };
+      } else {
+        // If user doesn't exist in the users array (e.g., hardcoded demo users),
+        // add them to ensure their data persists between sessions
+        users.push({
+          ...updatedUser,
+          // For demo users, we'll add the default password
+          password: 'password'
+        });
+      }
+      
+      // Save updated users array to localStorage
       localStorage.setItem('users', JSON.stringify(users));
       
-      // Update current user
+      // Always update the current user in localStorage
       setUser(updatedUser);
       localStorage.setItem('user', JSON.stringify(updatedUser));
       
+      console.log('[Auth] User updated successfully:', updatedUser);
       return true;
     } catch (error) {
       console.error('Update user error:', error);
-      return false;
+      throw error;
     } finally {
       setIsLoading(false);
     }
