@@ -38,18 +38,12 @@ export default function Home() {
               </div>
             </div>
             
-            <div className="flex flex-col md:flex-row justify-center gap-4 mb-8">
+            <div className="flex justify-center mb-8">
               <Link 
                 href="/order" 
                 className="px-8 py-3 bg-blue-600 text-white text-lg font-medium rounded-md hover:bg-blue-700 transition-colors"
               >
                 Start New Order
-              </Link>
-              <Link 
-                href="/orders" 
-                className="px-8 py-3 bg-gray-200 text-gray-800 text-lg font-medium rounded-md hover:bg-gray-300 transition-colors"
-              >
-                View My Orders
               </Link>
             </div>
             
