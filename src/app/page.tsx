@@ -43,7 +43,7 @@ export default function Home() {
               Start New Order
             </Link>
             <Link 
-              href="/orders" 
+              href="/my-orders" 
               className="px-8 py-3 bg-gray-200 text-gray-800 text-lg font-medium rounded-md hover:bg-gray-300 transition-colors"
             >
               View My Orders

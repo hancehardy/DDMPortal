@@ -3,10 +3,22 @@ import { useOrder } from '@/context/OrderContext';
 
 const CustomerInfo: React.FC = () => {
   const { orderData, updateOrderData } = useOrder();
+  const [showForm, setShowForm] = React.useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     updateOrderData({ [name]: value });
+    
+    // Save updated customer info to localStorage
+    const updatedCustomerInfo = {
+      ...orderData,
+      [name]: value
+    };
+    localStorage.setItem('customerInfo', JSON.stringify(updatedCustomerInfo));
+  };
+
+  const toggleForm = () => {
+    setShowForm(!showForm);
   };
 
   return (

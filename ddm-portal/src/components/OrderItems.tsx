@@ -1,12 +1,18 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useOrder } from '@/context/OrderContext';
-import { calculateItemPrice } from '@/utils/priceUtils';
-import { isValidItem } from '@/utils/priceUtils';
+import { isValidItem, calculateItemPrice } from '@/utils/priceUtils';
 
 const OrderItems: React.FC = () => {
   const { orderData, updateOrderItem, addOrderItem, removeOrderItem, glassTypes, finishes, isLoading } = useOrder();
+
+  // Debug data
+  useEffect(() => {
+    console.log('OrderItems - Glass Types:', glassTypes);
+    console.log('OrderItems - Selected Manufacturer:', orderData.manufacturer);
+    console.log('OrderItems - Selected Color:', orderData.color);
+  }, [glassTypes, orderData.manufacturer, orderData.color]);
 
   const handleChange = (id: string, field: string, value: string | number) => {
     updateOrderItem(id, { [field]: value });
@@ -16,30 +22,21 @@ const OrderItems: React.FC = () => {
     updateOrderItem(id, { [field]: checked });
   };
 
-  const getFinishPrice = () => {
-    const selectedFinish = finishes.find(finish => finish.name === orderData.color);
-    return selectedFinish?.sqftPrice || 0;
-  };
-
-  const getGlassTypePrice = (glassType: string) => {
-    const selectedGlassType = glassTypes.find(glass => glass.name === glassType);
-    return selectedGlassType?.sqftPrice || 0;
-  };
-
-  const calculateItemPrice = (item: any) => {
-    const itemSqFt = (item.width * item.height * item.qty) / 144;
-    if (isNaN(itemSqFt) || itemSqFt <= 0) return 0;
-
-    const finishPrice = getFinishPrice();
-    let totalPricePerSqFt = finishPrice;
-
-    // Add glass price if glass is selected
-    if (item.glass && item.glassType) {
-      const glassPrice = getGlassTypePrice(item.glassType);
-      totalPricePerSqFt += glassPrice;
-    }
-
-    return itemSqFt * totalPricePerSqFt;
+  // Use the shared pricing utility to calculate item price
+  const getItemPrice = (item: any) => {
+    console.log('OrderItems - Calculating price for item:', {
+      item,
+      manufacturer: orderData.manufacturer,
+      color: orderData.color
+    });
+    
+    return calculateItemPrice(
+      item, 
+      finishes, 
+      glassTypes, 
+      orderData.color,
+      orderData.manufacturer
+    );
   };
 
   if (isLoading) {
@@ -66,17 +63,17 @@ const OrderItems: React.FC = () => {
       </div>
 
       <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
+        <table className="min-w-full divide-y divide-gray-200 border border-gray-200">
           <thead className="bg-gray-50">
             <tr>
               <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Qty
+                Quantity
               </th>
               <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Width *
+                Width
               </th>
               <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Height *
+                Height
               </th>
               <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Options
@@ -94,7 +91,7 @@ const OrderItems: React.FC = () => {
                 Actions
               </th>
               <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Add Item
+                Add
               </th>
             </tr>
           </thead>
@@ -164,11 +161,15 @@ const OrderItems: React.FC = () => {
                       className={`w-32 px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${!item.glass ? 'bg-gray-100 text-gray-400' : ''}`}
                     >
                       <option value="">Select Type</option>
-                      {glassTypes.map((type) => (
-                        <option key={type.name} value={type.name}>
-                          {type.name}
-                        </option>
-                      ))}
+                      {glassTypes.length > 0 ? (
+                        glassTypes.map((type) => (
+                          <option key={type.id} value={type.name}>
+                            {type.name} (${type.sqftPrice.toFixed(2)}/sqft)
+                          </option>
+                        ))
+                      ) : (
+                        <option value="" disabled>No glass types available</option>
+                      )}
                     </select>
                   </td>
                   <td className="px-3 py-4 whitespace-nowrap">
@@ -181,14 +182,13 @@ const OrderItems: React.FC = () => {
                     />
                   </td>
                   <td className="px-3 py-4 whitespace-nowrap text-gray-800">
-                    ${calculateItemPrice(item, finishes, glassTypes, orderData.color).toFixed(2)}
+                    ${getItemPrice(item).toFixed(2)}
                   </td>
                   <td className="px-3 py-4 whitespace-nowrap">
                     <button
-                      type="button"
                       onClick={() => removeOrderItem(item.id)}
-                      className="text-red-600 hover:text-red-900"
-                      disabled={orderData.items.length <= 1}
+                      className="text-red-600 hover:text-red-800 transition-colors"
+                      disabled={orderData.items.length === 1}
                     >
                       Remove
                     </button>
@@ -198,9 +198,9 @@ const OrderItems: React.FC = () => {
                       <button
                         type="button"
                         onClick={addOrderItem}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                        className="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
                       >
-                        Add Item
+                        +
                       </button>
                     )}
                   </td>

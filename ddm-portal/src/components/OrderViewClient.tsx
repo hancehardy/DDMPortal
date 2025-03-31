@@ -85,7 +85,6 @@ const OrderViewClient: React.FC<OrderViewClientProps> = ({ id }) => {
               qty: 4,
               width: 24,
               height: 30,
-              bore: true,
               centerRail: false,
               glass: false,
               glassType: '',
@@ -96,7 +95,6 @@ const OrderViewClient: React.FC<OrderViewClientProps> = ({ id }) => {
               qty: 6,
               width: 36,
               height: 30,
-              bore: true,
               centerRail: false,
               glass: false,
               glassType: '',
@@ -107,7 +105,6 @@ const OrderViewClient: React.FC<OrderViewClientProps> = ({ id }) => {
               qty: 2,
               width: 24,
               height: 30,
-              bore: false,
               centerRail: false,
               glass: true,
               glassType: 'Frosted',
@@ -300,7 +297,13 @@ const OrderViewClient: React.FC<OrderViewClientProps> = ({ id }) => {
               <tbody className="bg-white divide-y divide-gray-200">
                 {order.items.map((item) => {
                   // Use the shared utility function for item price calculation
-                  const itemPrice = calculateItemPrice(item, finishes, glassTypes, order.color);
+                  const itemPrice = calculateItemPrice(
+                    item, 
+                    finishes, 
+                    glassTypes, 
+                    order.color,
+                    order.manufacturer
+                  );
                     
                   return (
                     <tr key={item.id}>
@@ -315,7 +318,6 @@ const OrderViewClient: React.FC<OrderViewClientProps> = ({ id }) => {
                       </td>
                       <td className="px-3 py-4 whitespace-nowrap">
                         <ul className="text-gray-800">
-                          {item.bore && <li>Bore</li>}
                           {item.centerRail && <li>Center Rail</li>}
                           {item.glass && <li>Glass</li>}
                         </ul>

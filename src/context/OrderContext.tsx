@@ -117,6 +117,41 @@ export function OrderProvider({ children }: { children: ReactNode }) {
     }));
   };
 
+  // Function to reset order data back to defaults
+  const resetOrderData = () => {
+    // Get the current user's customer info from localStorage if it exists
+    const savedCustomerInfo = localStorage.getItem('customerInfo');
+    const customerInfo = savedCustomerInfo ? JSON.parse(savedCustomerInfo) : null;
+
+    // Create new order data with preserved customer info if available
+    const newOrderData: OrderFormData = {
+      ...defaultOrderData,
+      ...(customerInfo && {
+        company: customerInfo.company || '',
+        contact: customerInfo.contact || '',
+        address: customerInfo.address || '',
+        phone: customerInfo.phone || '',
+        email: customerInfo.email || '',
+      }),
+      items: [{
+        id: uuidv4(),
+        qty: 1,
+        width: 0,
+        height: 0,
+        centerRail: false,
+        glass: false,
+        glassType: '',
+        notes: ''
+      }]
+    };
+
+    setOrderData(newOrderData);
+    // Clear saved order data from localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('savedOrderData');
+    }
+  };
+
   return (
     <OrderContext.Provider
       value={{

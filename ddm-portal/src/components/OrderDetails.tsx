@@ -1,14 +1,40 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { useOrder } from '@/context/OrderContext';
 
 const OrderDetails: React.FC = () => {
   const { orderData, updateOrderData, doorStyles, finishes, manufacturers, isLoading } = useOrder();
+
+  // Enhanced debug product data
+  useEffect(() => {
+    console.log('OrderDetails - Door Styles Data:', doorStyles);
+    console.log('OrderDetails - Door Style Sample:', doorStyles.length > 0 ? doorStyles[0] : 'No door styles');
+    console.log('OrderDetails - Manufacturers Data:', manufacturers);
+    console.log('OrderDetails - Manufacturer Sample:', manufacturers.length > 0 ? manufacturers[0] : 'No manufacturers');
+    console.log('OrderDetails - Finishes Data:', finishes);
+    console.log('OrderDetails - Current Selected Manufacturer:', orderData.manufacturer);
+    console.log('OrderDetails - Current Selected Color:', orderData.color);
+    
+    // Debug finishes filtered by selected manufacturer
+    if (orderData.manufacturer) {
+      const filteredByManufacturer = finishes.filter(f => f.manufacturer === orderData.manufacturer);
+      console.log(`OrderDetails - Finishes for ${orderData.manufacturer}:`, filteredByManufacturer);
+    }
+    
+    // Check if currently selected color exists in filtered finishes
+    if (orderData.manufacturer && orderData.color) {
+      const colorExists = finishes.some(
+        f => f.manufacturer === orderData.manufacturer && f.name === orderData.color
+      );
+      console.log(`OrderDetails - Selected color ${orderData.color} exists for manufacturer ${orderData.manufacturer}:`, colorExists);
+    }
+  }, [doorStyles, manufacturers, finishes, orderData.manufacturer, orderData.color]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     
     // If manufacturer changes, reset the color selection
     if (name === 'manufacturer' && value !== orderData.manufacturer) {
+      console.log(`OrderDetails - Manufacturer changed from ${orderData.manufacturer} to ${value}, resetting color selection`);
       updateOrderData({ 
         [name]: value,
         color: '' // Reset color when manufacturer changes
@@ -23,7 +49,9 @@ const OrderDetails: React.FC = () => {
     if (!orderData.manufacturer) {
       return []; // No finishes if no manufacturer is selected
     }
-    return finishes.filter(finish => finish.manufacturer === orderData.manufacturer);
+    const result = finishes.filter(finish => finish.manufacturer === orderData.manufacturer);
+    console.log(`OrderDetails - Filtered finishes for ${orderData.manufacturer}:`, result);
+    return result;
   }, [finishes, orderData.manufacturer]);
 
   if (isLoading) {
@@ -76,7 +104,7 @@ const OrderDetails: React.FC = () => {
           >
             <option value="">Select Door Style</option>
             {doorStyles.map((style) => (
-              <option key={style.name} value={style.name}>
+              <option key={style.id} value={style.name}>
                 {style.name}
               </option>
             ))}
@@ -96,7 +124,7 @@ const OrderDetails: React.FC = () => {
           >
             <option value="">Select Manufacturer</option>
             {manufacturers.map((manufacturer) => (
-              <option key={manufacturer.name} value={manufacturer.name}>
+              <option key={manufacturer.id} value={manufacturer.name}>
                 {manufacturer.name}
               </option>
             ))}
@@ -124,11 +152,16 @@ const OrderDetails: React.FC = () => {
               }
             </option>
             {filteredFinishes.map((finish) => (
-              <option key={finish.name} value={finish.name}>
+              <option key={finish.id} value={finish.name}>
                 {finish.name}
               </option>
             ))}
           </select>
+          {orderData.manufacturer && filteredFinishes.length === 0 && (
+            <p className="text-sm text-orange-500 mt-1">
+              No colors found for this manufacturer. Please add colors in the admin panel.
+            </p>
+          )}
         </div>
         
         <div>

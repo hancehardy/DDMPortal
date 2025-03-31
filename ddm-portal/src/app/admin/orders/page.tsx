@@ -144,22 +144,22 @@ export default function AdminOrdersPage() {
         {/* Filters */}
         <div className="mb-6 grid grid-cols-1 md:grid-cols-4 gap-4">
           <div>
-            <label className="block text-sm font-medium mb-2">Search</label>
+            <label className="block text-sm font-medium text-gray-800 mb-2">Search</label>
             <input
               type="text"
               placeholder="Search by ID, name, or email"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full p-2 border rounded"
+              className="w-full p-2 border rounded text-gray-900"
             />
           </div>
           
           <div>
-            <label className="block text-sm font-medium mb-2">Status</label>
+            <label className="block text-sm font-medium text-gray-800 mb-2">Status</label>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full p-2 border rounded"
+              className="w-full p-2 border rounded text-gray-900"
             >
               <option value="">All Statuses</option>
               {statusOptions.map(status => (
@@ -169,11 +169,11 @@ export default function AdminOrdersPage() {
           </div>
           
           <div>
-            <label className="block text-sm font-medium mb-2">Sort By</label>
+            <label className="block text-sm font-medium text-gray-800 mb-2">Sort By</label>
             <select
               value={sortOrder}
               onChange={(e) => setSortOrder(e.target.value)}
-              className="w-full p-2 border rounded"
+              className="w-full p-2 border rounded text-gray-900"
             >
               <option value="newest">Newest First</option>
               <option value="oldest">Oldest First</option>
@@ -210,32 +210,32 @@ export default function AdminOrdersPage() {
             <table className="min-w-full bg-white shadow-md rounded-lg overflow-hidden">
               <thead className="bg-gray-100">
                 <tr>
-                  <th className="py-3 px-4 text-left">Order ID</th>
-                  <th className="py-3 px-4 text-left">Date</th>
-                  <th className="py-3 px-4 text-left">Customer</th>
-                  <th className="py-3 px-4 text-left">Items</th>
-                  <th className="py-3 px-4 text-left">Total</th>
-                  <th className="py-3 px-4 text-left">Status</th>
-                  <th className="py-3 px-4 text-left">Actions</th>
+                  <th className="py-3 px-4 text-left text-gray-800 font-semibold">Order ID</th>
+                  <th className="py-3 px-4 text-left text-gray-800 font-semibold">Date</th>
+                  <th className="py-3 px-4 text-left text-gray-800 font-semibold">Customer</th>
+                  <th className="py-3 px-4 text-left text-gray-800 font-semibold">Items</th>
+                  <th className="py-3 px-4 text-left text-gray-800 font-semibold">Total</th>
+                  <th className="py-3 px-4 text-left text-gray-800 font-semibold">Status</th>
+                  <th className="py-3 px-4 text-left text-gray-800 font-semibold">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredOrders.map((order) => (
                   <tr key={order.id} className="border-b hover:bg-gray-50">
-                    <td className="py-3 px-4 font-medium">
+                    <td className="py-3 px-4 font-medium text-gray-900">
                       {order.id.slice(0, 8).toUpperCase()}
                     </td>
-                    <td className="py-3 px-4">
+                    <td className="py-3 px-4 text-gray-900">
                       {new Date(order.orderDate).toLocaleDateString()}
                     </td>
                     <td className="py-3 px-4">
-                      <div>{order.customer.name}</div>
-                      <div className="text-sm text-gray-500">{order.customer.email}</div>
+                      <div className="text-gray-900">{order.customer.name}</div>
+                      <div className="text-sm text-gray-700">{order.customer.email}</div>
                     </td>
-                    <td className="py-3 px-4">
+                    <td className="py-3 px-4 text-gray-900">
                       {order.items.length} {order.items.length === 1 ? 'item' : 'items'}
                     </td>
-                    <td className="py-3 px-4 font-medium">
+                    <td className="py-3 px-4 font-medium text-gray-900">
                       ${order.summary.total.toFixed(2)}
                     </td>
                     <td className="py-3 px-4">
@@ -253,7 +253,7 @@ export default function AdminOrdersPage() {
                       <div className="flex space-x-2">
                         <button
                           onClick={() => handleViewOrder(order.id)}
-                          className="text-blue-600 hover:text-blue-800"
+                          className="text-blue-800 hover:text-blue-900"
                         >
                           View
                         </button>
@@ -267,7 +267,7 @@ export default function AdminOrdersPage() {
                               }
                             }}
                             disabled={updating === order.id}
-                            className="border rounded p-1 text-sm"
+                            className="border rounded p-1 text-sm text-gray-900"
                           >
                             <option value="">Update Status</option>
                             {statusOptions.map(status => (

@@ -44,30 +44,30 @@ const OrderSummary: React.FC = () => {
       <div className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <h3 className="text-lg font-medium text-gray-700">Customer</h3>
-            <p className="text-gray-600">{orderData.company || 'Not specified'}</p>
-            <p className="text-gray-600">{orderData.contact || 'Not specified'}</p>
-            <p className="text-gray-600">{orderData.email || 'Not specified'}</p>
+            <h3 className="text-lg font-medium text-gray-800">Customer</h3>
+            <p className="text-gray-800">{orderData.company || 'Not specified'}</p>
+            <p className="text-gray-800">{orderData.contact || 'Not specified'}</p>
+            <p className="text-gray-800">{orderData.email || 'Not specified'}</p>
           </div>
           
           <div>
-            <h3 className="text-lg font-medium text-gray-700">Order Details</h3>
-            <p className="text-gray-600">Job: {orderData.jobName || 'Not specified'}</p>
-            <p className="text-gray-600">PO#: {orderData.poNumber || 'Not specified'}</p>
-            <p className="text-gray-600">Type: {orderData.quoteOrOrder}</p>
+            <h3 className="text-lg font-medium text-gray-800">Order Details</h3>
+            <p className="text-gray-800">Job: {orderData.jobName || 'Not specified'}</p>
+            <p className="text-gray-800">PO#: {orderData.poNumber || 'Not specified'}</p>
+            <p className="text-gray-800">Type: {orderData.quoteOrOrder}</p>
           </div>
         </div>
         
         <div className="mt-6">
-          <h3 className="text-lg font-medium text-gray-700">Order Totals</h3>
+          <h3 className="text-lg font-medium text-gray-800">Order Totals</h3>
           <div className="mt-2 grid grid-cols-2 gap-4">
             <div>
-              <p className="text-gray-600">Total Items: {calculateTotalItems()}</p>
-              <p className="text-gray-600">Total Sq. Ft: {calculateTotalSqFt().toFixed(2)}</p>
+              <p className="text-gray-800">Total Items: {calculateTotalItems()}</p>
+              <p className="text-gray-800">Total Sq. Ft: {calculateTotalSqFt().toFixed(2)}</p>
             </div>
             <div>
-              <p className="text-gray-600">Door Style: {orderData.doorStyle || 'Not specified'}</p>
-              <p className="text-gray-600">Color: {orderData.color || 'Not specified'}</p>
+              <p className="text-gray-800">Door Style: {orderData.doorStyle || 'Not specified'}</p>
+              <p className="text-gray-800">Color: {orderData.color || 'Not specified'}</p>
             </div>
           </div>
         </div>

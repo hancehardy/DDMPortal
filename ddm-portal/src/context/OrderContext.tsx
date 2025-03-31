@@ -12,6 +12,7 @@ interface OrderContextType {
   updateOrderItem: (id: string, data: Partial<OrderItem>) => void;
   removeOrderItem: (id: string) => void;
   resetOrderData: () => void;
+  resetOrderItems: () => void;
   doorStyles: DoorStyle[];
   finishes: Finish[];
   glassTypes: GlassType[];
@@ -84,25 +85,49 @@ export function OrderProvider({ children }: { children: ReactNode }) {
     const fetchData = async () => {
       setIsLoading(true);
       try {
+        // Try to restore order data from localStorage first
+        const savedOrderData = localStorage.getItem('savedOrderData');
+        if (savedOrderData) {
+          setOrderData(JSON.parse(savedOrderData));
+        }
+
+        console.log('OrderContext: Starting data fetch...');
+        
         // Fetch door styles
+        console.log('OrderContext: Fetching door styles...');
         const doorStylesResponse = await axios.get('/api/door-styles');
-        setDoorStyles(doorStylesResponse.data);
+        console.log('OrderContext: Raw door styles response:', doorStylesResponse.data);
+        
+        // Filter to only include available door styles
+        const availableDoorStyles = doorStylesResponse.data.filter((style: any) => style.available);
+        console.log('OrderContext: Filtered door styles (available only):', availableDoorStyles);
+        setDoorStyles(availableDoorStyles);
 
         // Fetch finishes
+        console.log('OrderContext: Fetching finishes...');
         const finishesResponse = await axios.get('/api/finishes');
+        console.log('OrderContext: Raw finishes response:', finishesResponse.data);
         setFinishes(finishesResponse.data);
+        
         // Save finishes to localStorage for use in OrderViewClient
         localStorage.setItem('finishes', JSON.stringify(finishesResponse.data));
 
         // Fetch glass types
+        console.log('OrderContext: Fetching glass types...');
         const glassTypesResponse = await axios.get('/api/glass-types');
+        console.log('OrderContext: Raw glass types response:', glassTypesResponse.data);
         setGlassTypes(glassTypesResponse.data);
+        
         // Save glass types to localStorage for use in OrderViewClient
         localStorage.setItem('glassTypes', JSON.stringify(glassTypesResponse.data));
 
         // Fetch manufacturers
+        console.log('OrderContext: Fetching manufacturers...');
         const manufacturersResponse = await axios.get('/api/manufacturers');
+        console.log('OrderContext: Raw manufacturers response:', manufacturersResponse.data);
         setManufacturers(manufacturersResponse.data);
+
+        console.log('OrderContext: All data fetched successfully.');
 
         // For now, we'll keep size parameters in memory since they don't have an API endpoint yet
         setSizeParameters([
@@ -128,25 +153,23 @@ export function OrderProvider({ children }: { children: ReactNode }) {
 
   // Order data functions
   const updateOrderData = (data: Partial<OrderFormData>) => {
-    setOrderData(prev => ({ ...prev, ...data }));
+    setOrderData(prev => {
+      const newData = { ...prev, ...data };
+      // Save to localStorage whenever order data is updated
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('savedOrderData', JSON.stringify(newData));
+      }
+      return newData;
+    });
   };
 
   // Function to reset order data back to defaults
   const resetOrderData = () => {
-    setOrderData({
-      ...defaultOrderData,
-      items: [{
-        id: uuidv4(),
-        qty: 1,
-        width: 0,
-        height: 0,
-        centerRail: false,
-        glass: false,
-        glassType: '',
-        notes: ''
-      }]
-    });
-    console.log('[Order] Reset order data to defaults');
+    setOrderData(defaultOrderData);
+    // Clear saved order data from localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('savedOrderData');
+    }
   };
 
   const addOrderItem = () => {
@@ -184,11 +207,32 @@ export function OrderProvider({ children }: { children: ReactNode }) {
     }));
   };
 
+  // Function to reset only order items while preserving order details
+  const resetOrderItems = () => {
+    setOrderData(prev => ({
+      ...prev,
+      items: [{
+        id: uuidv4(),
+        qty: 1,
+        width: 0,
+        height: 0,
+        centerRail: false,
+        glass: false,
+        glassType: '',
+        notes: ''
+      }]
+    }));
+  };
+
   // Door Style functions
   const addDoorStyle = async (doorStyle: DoorStyle) => {
     try {
       const response = await axios.post('/api/door-styles', doorStyle);
-      setDoorStyles(prev => [...prev, response.data]);
+      // Re-fetch all door styles to ensure we have the latest data
+      const doorStylesResponse = await axios.get('/api/door-styles');
+      const availableDoorStyles = doorStylesResponse.data.filter((style: any) => style.available);
+      setDoorStyles(availableDoorStyles);
+      return response.data;
     } catch (error) {
       console.error('Error adding door style:', error);
       throw error;
@@ -198,9 +242,11 @@ export function OrderProvider({ children }: { children: ReactNode }) {
   const updateDoorStyle = async (id: string, doorStyle: Partial<DoorStyle>) => {
     try {
       const response = await axios.put(`/api/door-styles/${id}`, doorStyle);
-      setDoorStyles(prev => 
-        prev.map(item => item.id === id ? response.data : item)
-      );
+      // Re-fetch all door styles to ensure we have the latest data
+      const doorStylesResponse = await axios.get('/api/door-styles');
+      const availableDoorStyles = doorStylesResponse.data.filter((style: any) => style.available);
+      setDoorStyles(availableDoorStyles);
+      return response.data;
     } catch (error) {
       console.error('Error updating door style:', error);
       throw error;
@@ -210,7 +256,10 @@ export function OrderProvider({ children }: { children: ReactNode }) {
   const deleteDoorStyle = async (id: string) => {
     try {
       await axios.delete(`/api/door-styles/${id}`);
-      setDoorStyles(prev => prev.filter(item => item.id !== id));
+      // Re-fetch all door styles to ensure we have the latest data
+      const doorStylesResponse = await axios.get('/api/door-styles');
+      const availableDoorStyles = doorStylesResponse.data.filter((style: any) => style.available);
+      setDoorStyles(availableDoorStyles);
     } catch (error) {
       console.error('Error deleting door style:', error);
       throw error;
@@ -221,7 +270,12 @@ export function OrderProvider({ children }: { children: ReactNode }) {
   const addFinish = async (finish: Finish) => {
     try {
       const response = await axios.post('/api/finishes', finish);
-      setFinishes(prev => [...prev, response.data]);
+      // Re-fetch all finishes to ensure we have the latest data
+      const finishesResponse = await axios.get('/api/finishes');
+      setFinishes(finishesResponse.data);
+      // Update local storage for OrderViewClient
+      localStorage.setItem('finishes', JSON.stringify(finishesResponse.data));
+      return response.data;
     } catch (error) {
       console.error('Error adding finish:', error);
       throw error;
@@ -231,9 +285,12 @@ export function OrderProvider({ children }: { children: ReactNode }) {
   const updateFinish = async (id: string, finish: Partial<Finish>) => {
     try {
       const response = await axios.put(`/api/finishes/${id}`, finish);
-      setFinishes(prev => 
-        prev.map(item => item.id === id ? response.data : item)
-      );
+      // Re-fetch all finishes to ensure we have the latest data
+      const finishesResponse = await axios.get('/api/finishes');
+      setFinishes(finishesResponse.data);
+      // Update local storage for OrderViewClient
+      localStorage.setItem('finishes', JSON.stringify(finishesResponse.data));
+      return response.data;
     } catch (error) {
       console.error('Error updating finish:', error);
       throw error;
@@ -243,7 +300,11 @@ export function OrderProvider({ children }: { children: ReactNode }) {
   const deleteFinish = async (id: string) => {
     try {
       await axios.delete(`/api/finishes/${id}`);
-      setFinishes(prev => prev.filter(item => item.id !== id));
+      // Re-fetch all finishes to ensure we have the latest data
+      const finishesResponse = await axios.get('/api/finishes');
+      setFinishes(finishesResponse.data);
+      // Update local storage for OrderViewClient
+      localStorage.setItem('finishes', JSON.stringify(finishesResponse.data));
     } catch (error) {
       console.error('Error deleting finish:', error);
       throw error;
@@ -254,7 +315,12 @@ export function OrderProvider({ children }: { children: ReactNode }) {
   const addGlassType = async (glassType: GlassType) => {
     try {
       const response = await axios.post('/api/glass-types', glassType);
-      setGlassTypes(prev => [...prev, response.data]);
+      // Re-fetch all glass types to ensure we have the latest data
+      const glassTypesResponse = await axios.get('/api/glass-types');
+      setGlassTypes(glassTypesResponse.data);
+      // Update local storage for OrderViewClient
+      localStorage.setItem('glassTypes', JSON.stringify(glassTypesResponse.data));
+      return response.data;
     } catch (error) {
       console.error('Error adding glass type:', error);
       throw error;
@@ -264,9 +330,12 @@ export function OrderProvider({ children }: { children: ReactNode }) {
   const updateGlassType = async (id: string, glassType: Partial<GlassType>) => {
     try {
       const response = await axios.put(`/api/glass-types/${id}`, glassType);
-      setGlassTypes(prev => 
-        prev.map(item => item.id === id ? response.data : item)
-      );
+      // Re-fetch all glass types to ensure we have the latest data
+      const glassTypesResponse = await axios.get('/api/glass-types');
+      setGlassTypes(glassTypesResponse.data);
+      // Update local storage for OrderViewClient
+      localStorage.setItem('glassTypes', JSON.stringify(glassTypesResponse.data));
+      return response.data;
     } catch (error) {
       console.error('Error updating glass type:', error);
       throw error;
@@ -276,7 +345,11 @@ export function OrderProvider({ children }: { children: ReactNode }) {
   const deleteGlassType = async (id: string) => {
     try {
       await axios.delete(`/api/glass-types/${id}`);
-      setGlassTypes(prev => prev.filter(item => item.id !== id));
+      // Re-fetch all glass types to ensure we have the latest data
+      const glassTypesResponse = await axios.get('/api/glass-types');
+      setGlassTypes(glassTypesResponse.data);
+      // Update local storage for OrderViewClient
+      localStorage.setItem('glassTypes', JSON.stringify(glassTypesResponse.data));
     } catch (error) {
       console.error('Error deleting glass type:', error);
       throw error;
@@ -287,7 +360,10 @@ export function OrderProvider({ children }: { children: ReactNode }) {
   const addManufacturer = async (manufacturer: Manufacturer) => {
     try {
       const response = await axios.post('/api/manufacturers', manufacturer);
-      setManufacturers(prev => [...prev, response.data]);
+      // Re-fetch all manufacturers to ensure we have the latest data
+      const manufacturersResponse = await axios.get('/api/manufacturers');
+      setManufacturers(manufacturersResponse.data);
+      return response.data;
     } catch (error) {
       console.error('Error adding manufacturer:', error);
       throw error;
@@ -297,9 +373,10 @@ export function OrderProvider({ children }: { children: ReactNode }) {
   const updateManufacturer = async (id: string, manufacturer: Partial<Manufacturer>) => {
     try {
       const response = await axios.put(`/api/manufacturers/${id}`, manufacturer);
-      setManufacturers(prev => 
-        prev.map(item => item.id === id ? response.data : item)
-      );
+      // Re-fetch all manufacturers to ensure we have the latest data
+      const manufacturersResponse = await axios.get('/api/manufacturers');
+      setManufacturers(manufacturersResponse.data);
+      return response.data;
     } catch (error) {
       console.error('Error updating manufacturer:', error);
       throw error;
@@ -309,7 +386,9 @@ export function OrderProvider({ children }: { children: ReactNode }) {
   const deleteManufacturer = async (id: string) => {
     try {
       await axios.delete(`/api/manufacturers/${id}`);
-      setManufacturers(prev => prev.filter(item => item.id !== id));
+      // Re-fetch all manufacturers to ensure we have the latest data
+      const manufacturersResponse = await axios.get('/api/manufacturers');
+      setManufacturers(manufacturersResponse.data); 
     } catch (error) {
       console.error('Error deleting manufacturer:', error);
       throw error;
@@ -323,6 +402,7 @@ export function OrderProvider({ children }: { children: ReactNode }) {
     updateOrderItem,
     removeOrderItem,
     resetOrderData,
+    resetOrderItems,
     doorStyles,
     finishes,
     glassTypes,

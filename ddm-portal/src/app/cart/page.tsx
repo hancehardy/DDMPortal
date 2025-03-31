@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Layout from '@/components/Layout';
 import { useAuth } from '@/context/AuthContext';
+import { calculateItemPrice } from '@/utils/priceUtils';
+import { Finish, GlassType } from '@/types';
 
 interface CartItem {
   id: string;
@@ -12,11 +14,15 @@ interface CartItem {
   width: number;
   height: number;
   doorStyle: string;
+  manufacturer: string;
   color: string;
   glass: boolean;
   glassType: string;
   centerRail: boolean;
+  bore?: boolean;
+  hinge?: string;
   price: number;
+  notes?: string;
 }
 
 export default function CartPage() {
@@ -27,16 +33,52 @@ export default function CartPage() {
   const [promoCode, setPromoCode] = useState('');
   const [promoApplied, setPromoApplied] = useState(false);
   const [discount, setDiscount] = useState(0);
+  const [finishes, setFinishes] = useState<Finish[]>([]);
+  const [glassTypes, setGlassTypes] = useState<GlassType[]>([]);
 
   useEffect(() => {
-    // Load cart items from localStorage
-    const loadCart = () => {
+    // Load reference data (finishes and glass types) from localStorage
+    const loadReferenceData = () => {
+      try {
+        const storedFinishes = localStorage.getItem('finishes');
+        const storedGlassTypes = localStorage.getItem('glassTypes');
+        
+        if (storedFinishes) {
+          setFinishes(JSON.parse(storedFinishes));
+        }
+        
+        if (storedGlassTypes) {
+          setGlassTypes(JSON.parse(storedGlassTypes));
+        }
+      } catch (error) {
+        console.error('Error loading reference data:', error);
+      }
+    };
+
+    loadReferenceData();
+  }, []); // Empty dependency array since we only want to load reference data once
+
+  useEffect(() => {
+    const loadCart = async () => {
       setLoading(true);
       try {
+        // Load cart items
         const storedCart = localStorage.getItem('cartItems');
-        if (storedCart) {
-          setCartItems(JSON.parse(storedCart));
-        }
+        const parsedCart = storedCart ? JSON.parse(storedCart) : [];
+        
+        // Calculate prices for each item
+        const cartWithPrices = parsedCart.map(item => ({
+          ...item,
+          price: calculateItemPrice(
+            item,
+            finishes,
+            glassTypes,
+            item.color,
+            item.manufacturer
+          )
+        }));
+        
+        setCartItems(cartWithPrices);
       } catch (error) {
         console.error('Error loading cart:', error);
       } finally {
@@ -45,7 +87,7 @@ export default function CartPage() {
     };
 
     loadCart();
-  }, []);
+  }, [finishes, glassTypes]);
 
   const updateQuantity = (id: string, newQty: number) => {
     if (newQty < 1) return;
@@ -83,7 +125,7 @@ export default function CartPage() {
 
   const getShipping = () => {
     const subtotal = getSubtotal();
-    // Free shipping on orders over $139 (like Cabinet Door Store)
+    // Free shipping on orders over $139
     return subtotal > 139 ? 0 : 15.99;
   };
 
@@ -117,8 +159,19 @@ export default function CartPage() {
 
   return (
     <Layout>
-      <div className="max-w-7xl mx-auto py-8 px-4">
-        <h1 className="text-3xl font-bold text-blue-800 mb-6">Cart</h1>
+      <div className="max-w-6xl mx-auto px-4 py-8">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold text-blue-800">Shopping Cart</h1>
+          <button
+            onClick={() => {
+              sessionStorage.setItem('fromCart', 'true');
+              router.push('/order');
+            }}
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+          >
+            Continue Shopping
+          </button>
+        </div>
 
         {cartItems.length === 0 ? (
           <div className="text-center py-12 bg-white rounded-lg shadow p-8">
@@ -166,6 +219,9 @@ export default function CartPage() {
                               <div className="text-sm text-gray-700">
                                 {item.width}" × {item.height}" - {item.color}
                               </div>
+                              <div className="text-sm text-gray-700">
+                                Manufacturer: {item.manufacturer}
+                              </div>
                               {item.glass && (
                                 <div className="text-sm text-gray-700">
                                   Glass: {item.glassType}
@@ -174,6 +230,16 @@ export default function CartPage() {
                               {item.centerRail && (
                                 <div className="text-sm text-gray-700">
                                   With Center Rail
+                                </div>
+                              )}
+                              {item.bore && (
+                                <div className="text-sm text-gray-700">
+                                  With Bore Hole
+                                </div>
+                              )}
+                              {item.hinge && item.hinge !== 'None' && (
+                                <div className="text-sm text-gray-700">
+                                  Hinge: {item.hinge}
                                 </div>
                               )}
                             </div>
@@ -222,118 +288,71 @@ export default function CartPage() {
                     ))}
                   </tbody>
                 </table>
-                <div className="px-6 py-4 bg-gray-50 flex justify-between">
-                  <div className="flex">
-                    <button
-                      onClick={clearCart}
-                      className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100"
-                    >
-                      Clear Cart
-                    </button>
-                    <Link
-                      href="/order"
-                      className="ml-2 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100"
-                    >
-                      Continue Shopping
-                    </Link>
-                  </div>
-                  <button
-                    onClick={() => {}}
-                    className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100"
-                  >
-                    Update Cart
-                  </button>
-                </div>
-              </div>
-              
-              {/* Coupon Code */}
-              <div className="mt-6 bg-white rounded-lg shadow p-6">
-                <h2 className="text-lg font-medium text-gray-900 mb-4">Have a coupon?</h2>
-                <div className="flex">
-                  <input
-                    type="text"
-                    value={promoCode}
-                    onChange={(e) => setPromoCode(e.target.value)}
-                    placeholder="Coupon code"
-                    className="px-4 py-2 border border-gray-300 rounded-l-md focus:ring-blue-500 focus:border-blue-500 flex-1"
-                    disabled={promoApplied}
-                  />
-                  <button
-                    onClick={applyPromoCode}
-                    disabled={promoApplied || !promoCode}
-                    className={`px-4 py-2 rounded-r-md ${
-                      promoApplied 
-                        ? 'bg-green-600 text-white cursor-not-allowed' 
-                        : 'bg-blue-600 text-white hover:bg-blue-700'
-                    }`}
-                  >
-                    {promoApplied ? 'Applied' : 'Apply'}
-                  </button>
-                </div>
-                {promoApplied && (
-                  <p className="mt-2 text-sm text-green-600">Coupon code applied successfully!</p>
-                )}
               </div>
             </div>
-            
-            {/* Order Summary */}
+
             <div className="w-full lg:w-1/3">
               <div className="bg-white rounded-lg shadow p-6">
-                <h2 className="text-lg font-medium text-gray-900 mb-4">Order Summary</h2>
+                <h2 className="text-xl font-semibold text-gray-800 mb-4">Order Summary</h2>
                 
-                <div className="border-t border-gray-200 pt-4">
-                  <div className="flex justify-between items-center py-2">
+                <div className="space-y-3 mb-6">
+                  <div className="flex justify-between border-b pb-2">
                     <span className="text-gray-700">Subtotal</span>
                     <span className="text-gray-900 font-medium">${getSubtotal().toFixed(2)}</span>
                   </div>
-                  
-                  {discount > 0 && (
-                    <div className="flex justify-between items-center py-2">
-                      <span className="text-gray-700">Discount ({discount}%)</span>
-                      <span className="text-green-600 font-medium">-${((getSubtotal() * discount) / 100).toFixed(2)}</span>
-                    </div>
-                  )}
-                  
-                  <div className="flex justify-between items-center py-2">
+                  <div className="flex justify-between border-b pb-2">
                     <span className="text-gray-700">Shipping</span>
                     <span className="text-gray-900 font-medium">
                       {getShipping() === 0 ? 'Free' : `$${getShipping().toFixed(2)}`}
                     </span>
                   </div>
-                  
-                  <div className="flex justify-between items-center py-3 border-t border-gray-200 mt-2">
-                    <span className="text-lg font-bold text-gray-900">Total</span>
-                    <span className="text-xl font-bold text-blue-700">${getTotal().toFixed(2)}</span>
+                  {promoApplied && (
+                    <div className="flex justify-between border-b pb-2 text-green-700">
+                      <span>Discount ({discount}%)</span>
+                      <span>-${((getSubtotal() * discount) / 100).toFixed(2)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between pt-2">
+                    <span className="text-gray-900 font-semibold">Total</span>
+                    <span className="text-blue-800 text-xl font-bold">${getTotal().toFixed(2)}</span>
                   </div>
                 </div>
                 
-                <button
-                  onClick={proceedToCheckout}
-                  className="w-full mt-6 px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                >
-                  Proceed to Checkout
-                </button>
-              </div>
-              
-              {/* FAQ */}
-              <div className="bg-white rounded-lg shadow p-6 mt-6">
-                <h2 className="text-lg font-medium text-gray-900 mb-4">Frequently Asked Questions</h2>
+                {!promoApplied && (
+                  <div className="mb-6">
+                    <div className="flex mb-2">
+                      <input
+                        type="text"
+                        value={promoCode}
+                        onChange={(e) => setPromoCode(e.target.value)}
+                        placeholder="Enter promo code"
+                        className="flex-grow px-3 py-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      />
+                      <button
+                        onClick={applyPromoCode}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-r-md hover:bg-blue-700 transition-colors"
+                      >
+                        Apply
+                      </button>
+                    </div>
+                    <p className="text-sm text-gray-600">Try WELCOME10 for 10% off!</p>
+                  </div>
+                )}
                 
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="text-md font-medium text-gray-900">How long will my order take?</h3>
-                    <p className="text-sm text-gray-700 mt-1">Most orders ship within 7-10 business days. Custom orders may take longer.</p>
-                  </div>
+                <div className="space-y-3">
+                  <button
+                    onClick={proceedToCheckout}
+                    className="w-full px-4 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                  >
+                    Proceed to Checkout
+                  </button>
                   
-                  <div>
-                    <h3 className="text-md font-medium text-gray-900">Can I modify my order?</h3>
-                    <p className="text-sm text-gray-700 mt-1">Orders can be modified within 24 hours of placing them. Please contact customer service.</p>
-                  </div>
-                  
-                  <div>
-                    <h3 className="text-md font-medium text-gray-900">Do you offer discounts?</h3>
-                    <p className="text-sm text-gray-700 mt-1">We offer free shipping on orders over $139. Sign up for our newsletter to receive special discount codes.</p>
-                  </div>
+                  <button
+                    onClick={clearCart}
+                    className="w-full px-4 py-2 text-gray-700 hover:text-red-600 transition-colors text-sm"
+                  >
+                    Clear Cart
+                  </button>
                 </div>
               </div>
             </div>

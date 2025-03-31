@@ -14,14 +14,38 @@ export const calculateItemPrice = (
   item: OrderItem, 
   finishes: Finish[], 
   glassTypes: GlassType[],
-  selectedColor: string
+  selectedColor: string,
+  manufacturer?: string
 ): number => {
   if (!isValidItem(item)) return 0;
   
   const itemSqFt = (item.width * item.height * item.qty) / 144;
   if (isNaN(itemSqFt) || itemSqFt <= 0) return 0;
 
-  const selectedFinish = finishes.find(finish => finish.name === selectedColor);
+  // Debug logging for price calculation
+  console.log('Price Calculation Debug:', {
+    item,
+    selectedColor,
+    manufacturer,
+    availableFinishes: finishes,
+    itemSqFt
+  });
+
+  // Filter finish by both name and manufacturer if manufacturer is provided
+  const selectedFinish = manufacturer 
+    ? finishes.find(finish => finish.name === selectedColor && finish.manufacturer === manufacturer)
+    : finishes.find(finish => finish.name === selectedColor);
+  
+  // Debug logging for finish selection
+  console.log('Selected Finish:', selectedFinish);
+  
+  if (!selectedFinish && selectedColor) {
+    console.warn(
+      `No finish found for color "${selectedColor}"${manufacturer ? ` and manufacturer "${manufacturer}"` : ''}. Available finishes:`, 
+      finishes
+    );
+  }
+  
   const finishPrice = selectedFinish?.sqftPrice || 0;
   let totalPricePerSqFt = finishPrice;
 
@@ -30,9 +54,25 @@ export const calculateItemPrice = (
     const selectedGlassType = glassTypes.find(glass => glass.name === item.glassType);
     const glassPrice = selectedGlassType?.sqftPrice || 0;
     totalPricePerSqFt += glassPrice;
+    
+    // Debug logging for glass price
+    console.log('Glass Price:', {
+      glassType: item.glassType,
+      selectedGlassType,
+      glassPrice
+    });
   }
 
-  return itemSqFt * totalPricePerSqFt;
+  const totalPrice = itemSqFt * totalPricePerSqFt;
+  
+  // Debug logging for final price
+  console.log('Final Price Calculation:', {
+    itemSqFt,
+    totalPricePerSqFt,
+    totalPrice
+  });
+
+  return totalPrice;
 };
 
 /**
@@ -42,11 +82,12 @@ export const calculateTotalPrice = (
   items: OrderItem[], 
   finishes: Finish[], 
   glassTypes: GlassType[],
-  selectedColor: string
+  selectedColor: string,
+  manufacturer?: string
 ): number => {
   const validItems = items.filter(isValidItem);
   return validItems.reduce((total, item) => {
-    return total + calculateItemPrice(item, finishes, glassTypes, selectedColor);
+    return total + calculateItemPrice(item, finishes, glassTypes, selectedColor, manufacturer);
   }, 0);
 };
 

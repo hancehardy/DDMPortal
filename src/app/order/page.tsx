@@ -17,7 +17,7 @@ export default function OrderPage() {
         <div className="flex justify-center items-center h-64">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-700 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading order form...</p>
+            <p className="text-gray-800">Loading order form...</p>
           </div>
         </div>
       </Layout>
@@ -30,7 +30,7 @@ export default function OrderPage() {
         <h1 className="text-3xl font-bold text-blue-800 mb-6">New Cabinet Door Order</h1>
         
         <div className="mb-8">
-          <p className="text-gray-600">
+          <p className="text-gray-800">
             Please fill out the form below to place your order for custom cabinet doors. 
             All fields marked with an asterisk (*) are required.
           </p>

@@ -16,209 +16,144 @@ const OrderSummary: React.FC = () => {
   const validItems = orderData.items.filter(isValidItem);
   const hasValidItems = validItems.length > 0;
 
-  const getFinishPrice = () => {
-    const selectedFinish = finishes.find(finish => finish.name === orderData.color);
-    return selectedFinish?.sqftPrice || 0;
-  };
+  // Use the shared utility functions for calculations
+  const totalItems = calculateTotalItems(orderData.items);
+  const totalSqFt = calculateTotalSqFt(orderData.items);
+  const totalPrice = calculateTotalPrice(
+    orderData.items, 
+    finishes, 
+    glassTypes, 
+    orderData.color,
+    orderData.manufacturer
+  );
 
-  const calculateItemPrice = (item: any) => {
-    const itemSqFt = (item.width * item.height * item.qty) / 144;
-    if (isNaN(itemSqFt) || itemSqFt <= 0) return 0;
-
-    const finishPrice = getFinishPrice();
-    let totalPricePerSqFt = finishPrice;
-
-    // Add glass price if glass is selected
-    if (item.glass && item.glassType) {
-      const selectedGlassType = glassTypes.find(glass => glass.name === item.glassType);
-      const glassPrice = selectedGlassType?.sqftPrice || 0;
-      totalPricePerSqFt += glassPrice;
+  const validateOrder = () => {
+    // Basic validation
+    if (!orderData.doorStyle) return "Please select a door style";
+    if (!orderData.manufacturer) return "Please select a manufacturer";
+    if (!orderData.color) return "Please select a color";
+    if (!hasValidItems) return "Please add at least one valid item";
+    
+    // Check if any items have glass selected but no glass type
+    const invalidGlassItems = orderData.items.filter(item => 
+      item.glass && !item.glassType && isValidItem(item)
+    );
+    
+    if (invalidGlassItems.length > 0) {
+      return "One or more items have glass selected but no glass type";
     }
-
-    return itemSqFt * totalPricePerSqFt;
+    
+    return "";
   };
 
-  const handleSubmit = async () => {
-    if (!hasValidItems) {
-      setSubmitError('Please add at least one item with dimensions before submitting.');
+  const handleCreateOrder = async (isDraft: boolean) => {
+    const error = validateOrder();
+    if (error) {
+      setSubmitError(error);
+      setTimeout(() => setSubmitError(''), 5000);
       return;
     }
-    
+
     setIsSubmitting(true);
     setSubmitError('');
-    
+
     try {
-      // In a real application, you would send the order data to your backend here
-      // For now, we'll just save to localStorage
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Generate a unique ID for the order
-      const orderId = uuidv4();
-      
-      // Calculate totals
-      const totalItems = calculateTotalItems(orderData.items);
-      const totalSqFt = calculateTotalSqFt(orderData.items);
-      const totalPrice = calculateTotalPrice(orderData.items, finishes, glassTypes, orderData.color);
-      
-      // Add additional order metadata
-      const completeOrder = {
+      // Prepare order data for submission
+      const orderPayload = {
         ...orderData,
-        // Only include valid items
-        items: validItems,
-        id: orderId,
-        orderDate: new Date().toISOString().split('T')[0],
-        status: 'Pending',
+        status: isDraft ? 'Draft' : 'Pending',
         totalItems,
         totalSqFt,
-        totalPrice
+        totalPrice,
+        id: uuidv4() // Generate ID on client side
       };
       
-      // Save to localStorage
-      const savedOrders = localStorage.getItem('savedOrders');
-      let orders = [];
-      
-      if (savedOrders) {
-        orders = JSON.parse(savedOrders);
+      // Make API call to create order
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(orderPayload),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error creating order: ${response.statusText}`);
       }
-      
-      orders.push(completeOrder);
-      localStorage.setItem('savedOrders', JSON.stringify(orders));
-      
+
       setSubmitSuccess(true);
       
-      // After a short delay, redirect to the order view page
+      // Redirect after a short delay
       setTimeout(() => {
-        router.push(`/orders/${orderId}`);
+        router.push('/orders');
       }, 2000);
+      
     } catch (error) {
-      setSubmitError('There was an error submitting your order. Please try again.');
-      console.error('Error submitting order:', error);
+      console.error('Error creating order:', error);
+      setSubmitError(`Failed to create order: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleSaveDraft = () => {
-    try {
-      // Generate a unique ID for the draft
-      const draftId = uuidv4();
-      
-      // Calculate totals
-      const totalItems = calculateTotalItems(orderData.items);
-      const totalSqFt = calculateTotalSqFt(orderData.items);
-      const totalPrice = calculateTotalPrice(orderData.items, finishes, glassTypes, orderData.color);
-      
-      // Add additional order metadata
-      const draftOrder = {
-        ...orderData,
-        id: draftId,
-        orderDate: new Date().toISOString().split('T')[0],
-        status: 'Draft',
-        totalItems,
-        totalSqFt,
-        totalPrice
-      };
-      
-      // Save to localStorage
-      const savedDrafts = localStorage.getItem('savedDrafts');
-      let drafts = [];
-      
-      if (savedDrafts) {
-        drafts = JSON.parse(savedDrafts);
-      }
-      
-      drafts.push(draftOrder);
-      localStorage.setItem('savedDrafts', JSON.stringify(drafts));
-      
-      // Show success message
-      alert('Draft saved successfully!');
-    } catch (error) {
-      console.error('Error saving draft:', error);
-      alert('There was an error saving your draft. Please try again.');
-    }
-  };
-
   return (
-    <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+    <div className="bg-white rounded-lg shadow-md p-6">
       <h2 className="text-xl font-semibold mb-4 text-blue-800 border-b pb-2">Order Summary</h2>
       
-      <div className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <h3 className="text-lg font-medium text-gray-700">Customer</h3>
-            <p className="text-gray-600">{orderData.company || 'Not specified'}</p>
-            <p className="text-gray-600">{orderData.contact || 'Not specified'}</p>
-            <p className="text-gray-600">{orderData.email || 'Not specified'}</p>
+      {submitSuccess && (
+        <div className="mb-4 p-3 bg-green-100 text-green-800 rounded flex items-center">
+          <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+          </svg>
+          <span>Order created successfully! Redirecting...</span>
+        </div>
+      )}
+
+      {submitError && (
+        <div className="mb-4 p-3 bg-red-100 text-red-800 rounded flex items-center">
+          <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+          </svg>
+          <span>{submitError}</span>
+        </div>
+      )}
+      
+      <div className="mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="p-4 bg-gray-50 rounded">
+            <p className="text-sm text-gray-500 mb-1">Total Items</p>
+            <p className="text-2xl font-bold">{totalItems}</p>
           </div>
           
-          <div>
-            <h3 className="text-lg font-medium text-gray-700">Order Details</h3>
-            <p className="text-gray-600">Job: {orderData.jobName || 'Not specified'}</p>
-            <p className="text-gray-600">PO#: {orderData.poNumber || 'Not specified'}</p>
-            <p className="text-gray-600">Type: {orderData.quoteOrOrder}</p>
+          <div className="p-4 bg-gray-50 rounded">
+            <p className="text-sm text-gray-500 mb-1">Square Footage</p>
+            <p className="text-2xl font-bold">{totalSqFt.toFixed(2)} sq ft</p>
+          </div>
+          
+          <div className="p-4 bg-blue-50 rounded">
+            <p className="text-sm text-blue-600 mb-1">Total Price</p>
+            <p className="text-2xl font-bold text-blue-800">${totalPrice.toFixed(2)}</p>
           </div>
         </div>
+      </div>
+      
+      <div className="flex flex-col md:flex-row gap-4">
+        <button
+          type="button"
+          onClick={() => handleCreateOrder(true)}
+          disabled={isSubmitting || !hasValidItems}
+          className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isSubmitting ? 'Saving...' : 'Save as Draft'}
+        </button>
         
-        <div className="mt-6">
-          <h3 className="text-lg font-medium text-gray-700">Order Totals</h3>
-          {!hasValidItems ? (
-            <p className="text-amber-600 mt-2">No valid items added. Please add items with dimensions to your order.</p>
-          ) : (
-            <div className="mt-2 grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-gray-600">Total Items: {calculateTotalItems(orderData.items)}</p>
-                <p className="text-gray-600">Total Sq. Ft: {calculateTotalSqFt(orderData.items).toFixed(2)}</p>
-                <p className="text-gray-600">Total Price: ${calculateTotalPrice(orderData.items, finishes, glassTypes, orderData.color).toFixed(2)}</p>
-              </div>
-              <div>
-                <p className="text-gray-600">Door Style: {orderData.doorStyle || 'Not specified'}</p>
-                <p className="text-gray-600">Color: {orderData.color || 'Not specified'}</p>
-                <p className="text-gray-600">Finish Price: ${getFinishPrice().toFixed(2)}/sq.ft</p>
-              </div>
-            </div>
-          )}
-        </div>
-        
-        {submitSuccess ? (
-          <div className="mt-6 p-4 bg-green-100 text-green-800 rounded-md">
-            Your order has been submitted successfully! Redirecting to order details...
-          </div>
-        ) : (
-          <div className="mt-6 flex flex-col space-y-3">
-            {submitError && (
-              <div className="p-4 bg-red-100 text-red-800 rounded-md w-full">
-                {submitError}
-              </div>
-            )}
-            
-            <div className="flex flex-col md:flex-row justify-between gap-3">
-              <div className="flex flex-col sm:flex-row gap-2">
-                <button
-                  type="button"
-                  onClick={handleSaveDraft}
-                  className="px-6 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500"
-                >
-                  Save Draft
-                </button>
-                <button
-                  type="button"
-                  onClick={handleSubmit}
-                  disabled={isSubmitting || !hasValidItems}
-                  className={`px-6 py-2 ${!hasValidItems ? 'bg-blue-300' : 'bg-blue-600 hover:bg-blue-700'} text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-blue-400`}
-                >
-                  {isSubmitting ? 'Submitting...' : 'Submit Order'}
-                </button>
-              </div>
-              
-              <AddToCartButton 
-                items={orderData.items}
-                doorStyle={orderData.doorStyle}
-                color={orderData.color}
-                calculateItemPrice={calculateItemPrice}
-              />
-            </div>
-          </div>
-        )}
+        <AddToCartButton 
+          items={orderData.items} 
+          orderDetails={{
+            doorStyle: orderData.doorStyle,
+            color: orderData.color,
+            manufacturer: orderData.manufacturer
+          }}
+          disabled={isSubmitting || !hasValidItems}
+        />
       </div>
     </div>
   );

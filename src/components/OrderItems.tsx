@@ -33,28 +33,34 @@ const OrderItems: React.FC = () => {
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                 Qty
               </th>
-              <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                 Width
               </th>
-              <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                 Height
               </th>
-              <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                 Hinge
               </th>
-              <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Options
+              <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                Bore
               </th>
-              <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                Center Rail
+              </th>
+              <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                Glass
+              </th>
+              <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                 Glass Type
               </th>
-              <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                 Notes
               </th>
-              <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                 Actions
               </th>
             </tr>
@@ -109,7 +115,7 @@ const OrderItems: React.FC = () => {
                         onChange={(e) => handleCheckboxChange(item.id, 'bore', e.target.checked)}
                         className="rounded text-blue-600 focus:ring-blue-500"
                       />
-                      <span className="ml-2 text-sm text-gray-700">Bore</span>
+                      <span className="ml-2 text-sm text-gray-800">Bore</span>
                     </label>
                     <label className="inline-flex items-center">
                       <input
@@ -118,7 +124,7 @@ const OrderItems: React.FC = () => {
                         onChange={(e) => handleCheckboxChange(item.id, 'centerRail', e.target.checked)}
                         className="rounded text-blue-600 focus:ring-blue-500"
                       />
-                      <span className="ml-2 text-sm text-gray-700">Center Rail</span>
+                      <span className="ml-2 text-sm text-gray-800">Center Rail</span>
                     </label>
                     <label className="inline-flex items-center">
                       <input
@@ -127,7 +133,7 @@ const OrderItems: React.FC = () => {
                         onChange={(e) => handleCheckboxChange(item.id, 'glass', e.target.checked)}
                         className="rounded text-blue-600 focus:ring-blue-500"
                       />
-                      <span className="ml-2 text-sm text-gray-700">Glass</span>
+                      <span className="ml-2 text-sm text-gray-800">Glass</span>
                     </label>
                   </div>
                 </td>
@@ -171,7 +177,7 @@ const OrderItems: React.FC = () => {
       </div>
       
       {orderData.items.length === 0 && (
-        <div className="text-center py-4 text-gray-500">
+        <div className="text-center py-4 text-gray-700">
           No items added yet. Click "Add Item" to start your order.
         </div>
       )}

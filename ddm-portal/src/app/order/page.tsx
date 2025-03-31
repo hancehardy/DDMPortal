@@ -11,17 +11,24 @@ import { useAuth } from '@/context/AuthContext';
 import Link from 'next/link';
 
 export default function OrderPage() {
-  const { isLoading, resetOrderData } = useOrder();
+  const { isLoading, resetOrderData, resetOrderItems } = useOrder();
   const { isAuthenticated } = useAuth();
   const initialLoadRef = useRef(false);
 
-  // Reset order data when the page mounts, but only once
+  // Only reset order data when explicitly requested (e.g., starting a new order)
   useEffect(() => {
     if (!initialLoadRef.current) {
-      resetOrderData();
+      // Check if we're coming from cart
+      const isFromCart = sessionStorage.getItem('fromCart');
+      if (isFromCart) {
+        resetOrderItems(); // Reset only order items when returning from cart
+      } else {
+        resetOrderData(); // Reset everything for new orders
+      }
+      sessionStorage.removeItem('fromCart');
       initialLoadRef.current = true;
     }
-  }, [resetOrderData]);
+  }, [resetOrderData, resetOrderItems]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault(); // Prevent form submission

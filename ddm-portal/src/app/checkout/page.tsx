@@ -6,6 +6,8 @@ import Link from 'next/link';
 import Layout from '@/components/Layout';
 import { useAuth } from '@/context/AuthContext';
 import * as orderService from '@/services/orderService';
+import { calculateItemPrice } from '@/utils/priceUtils';
+import { Finish, GlassType } from '@/types';
 
 // Use the OrderItem interface from orderService
 import { OrderItem, OrderSummary } from '@/services/orderService';
@@ -15,6 +17,8 @@ export default function CheckoutPage() {
   const { user, isAuthenticated } = useAuth();
   const [cartItems, setCartItems] = useState<OrderItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [finishes, setFinishes] = useState<Finish[]>([]);
+  const [glassTypes, setGlassTypes] = useState<GlassType[]>([]);
   const [orderSummary, setOrderSummary] = useState<OrderSummary>({
     subtotal: 0,
     shipping: 0,
@@ -38,6 +42,28 @@ export default function CheckoutPage() {
   const [orderId, setOrderId] = useState('');
 
   useEffect(() => {
+    // Load reference data (finishes and glass types) from localStorage
+    const loadReferenceData = () => {
+      try {
+        const storedFinishes = localStorage.getItem('finishes');
+        const storedGlassTypes = localStorage.getItem('glassTypes');
+        
+        if (storedFinishes) {
+          setFinishes(JSON.parse(storedFinishes));
+        }
+        
+        if (storedGlassTypes) {
+          setGlassTypes(JSON.parse(storedGlassTypes));
+        }
+      } catch (error) {
+        console.error('Error loading reference data:', error);
+      }
+    };
+
+    loadReferenceData();
+  }, []); // Empty dependency array since we only want to load reference data once
+
+  useEffect(() => {
     // Redirect if not authenticated and no cart items
     const checkAuth = async () => {
       setLoading(true);
@@ -46,16 +72,29 @@ export default function CheckoutPage() {
         // Load cart items
         const storedCart = localStorage.getItem('cartItems');
         const parsedCart = storedCart ? JSON.parse(storedCart) : [];
-        setCartItems(parsedCart);
+        
+        // Calculate prices for each item
+        const cartWithPrices = parsedCart.map(item => ({
+          ...item,
+          price: calculateItemPrice(
+            item,
+            finishes,
+            glassTypes,
+            item.color,
+            item.manufacturer
+          )
+        }));
+        
+        setCartItems(cartWithPrices);
         
         // If no items in cart, redirect to cart page
-        if (parsedCart.length === 0) {
+        if (cartWithPrices.length === 0) {
           router.push('/cart');
           return;
         }
 
         // Calculate order summary using the service
-        const summary = orderService.calculateCartTotals(parsedCart);
+        const summary = orderService.calculateCartTotals(cartWithPrices);
         setOrderSummary(summary);
 
         // Pre-fill with user data if authenticated
@@ -80,7 +119,7 @@ export default function CheckoutPage() {
     };
 
     checkAuth();
-  }, [router, isAuthenticated, user]);
+  }, [router, isAuthenticated, user, finishes, glassTypes]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -168,7 +207,18 @@ export default function CheckoutPage() {
   return (
     <Layout>
       <div className="max-w-7xl mx-auto py-8 px-4">
-        <h1 className="text-3xl font-bold text-blue-800 mb-6">Checkout</h1>
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold text-blue-800">Checkout</h1>
+          <Link 
+            href="/cart" 
+            className="px-4 py-2 text-blue-600 hover:text-blue-800 flex items-center gap-2"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
+            </svg>
+            Return to Cart
+          </Link>
+        </div>
         
         <div className="flex flex-col lg:flex-row gap-8">
           <div className="w-full lg:w-2/3">

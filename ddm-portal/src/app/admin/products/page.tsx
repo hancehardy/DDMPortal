@@ -12,6 +12,8 @@ interface Product {
   active: boolean;
   description?: string;
   imageUrl?: string;
+  manufacturer?: string;
+  sqftPrice?: number;
 }
 
 export default function AdminProductsPage() {
@@ -25,12 +27,16 @@ export default function AdminProductsPage() {
   const [productType, setProductType] = useState('');
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [newProduct, setNewProduct] = useState<Omit<Product, 'id'>>({
+  const [manufacturers, setManufacturers] = useState<{id: string, name: string}[]>([]);
+  const [newProduct, setNewProduct] = useState<Product>({
+    id: '',
     name: '',
     type: 'doorStyle',
     active: true,
     description: '',
-    imageUrl: ''
+    imageUrl: '',
+    manufacturer: '',
+    sqftPrice: 0
   });
 
   // Debug auth state
@@ -47,33 +53,79 @@ export default function AdminProductsPage() {
     }
   }, [isAdmin, router]);
   
-  // Load products (mock data for demo)
+  // Load products
   useEffect(() => {
     async function loadProducts() {
       try {
         setLoading(true);
         
-        // In a real app, fetch from API:
-        // const doorStyles = await fetch('/api/door-styles').then(res => res.json());
-        // etc.
+        // Fetch all product types from APIs
+        const doorStyles = await fetch('/api/door-styles').then(res => res.json());
+        const finishes = await fetch('/api/finishes').then(res => res.json());
+        const glassTypes = await fetch('/api/glass-types').then(res => res.json());
+        const manufacturersData = await fetch('/api/manufacturers').then(res => res.json());
         
-        // Mock data for demo
-        const mockProducts: Product[] = [
-          { id: '1', name: 'Shaker', type: 'doorStyle', active: true, description: 'Classic shaker style door' },
-          { id: '2', name: 'Raised Panel', type: 'doorStyle', active: true, description: 'Traditional raised panel door' },
-          { id: '3', name: 'Flat Panel', type: 'doorStyle', active: true, description: 'Modern flat panel door' },
-          { id: '4', name: 'White', type: 'finish', active: true, description: 'Bright white finish' },
-          { id: '5', name: 'Natural Oak', type: 'finish', active: true, description: 'Natural oak wood finish' },
-          { id: '6', name: 'Ebony', type: 'finish', active: true, description: 'Dark black finish' },
-          { id: '7', name: 'Clear', type: 'glassType', active: true, description: 'Standard clear glass' },
-          { id: '8', name: 'Frosted', type: 'glassType', active: true, description: 'Privacy frosted glass' },
-          { id: '9', name: 'Tinted', type: 'glassType', active: true, description: 'Lightly tinted glass' },
-          { id: '10', name: 'DDM Cabinets', type: 'manufacturer', active: true, description: 'Our main supplier' },
-          { id: '11', name: 'Quality Doors Inc', type: 'manufacturer', active: true, description: 'Premium cabinet door supplier' },
+        // Store manufacturers for dropdown lists
+        setManufacturers(manufacturersData.map((item: any) => ({
+          id: item.id,
+          name: item.name
+        })));
+        
+        // Map each to Product type with appropriate type field
+        const formattedDoorStyles = doorStyles.map((item: any) => ({
+          id: item.id,
+          name: item.name,
+          type: 'doorStyle',
+          active: item.available, // Map available to active
+          description: '', // DoorStyle model doesn't have description
+          imageUrl: '', // DoorStyle model doesn't have imageUrl
+          manufacturer: '',
+          sqftPrice: 0
+        }));
+        
+        const formattedFinishes = finishes.map((item: any) => ({
+          id: item.id,
+          name: item.name,
+          type: 'finish',
+          active: true, // Finish model doesn't have active status
+          description: `Price: $${item.sqftPrice.toFixed(2)}/sqft, Manufacturer: ${item.manufacturer}`,
+          imageUrl: '',
+          manufacturer: item.manufacturer,
+          sqftPrice: item.sqftPrice
+        }));
+        
+        const formattedGlassTypes = glassTypes.map((item: any) => ({
+          id: item.id,
+          name: item.name,
+          type: 'glassType',
+          active: true, // GlassType model doesn't have active status
+          description: `Price: $${item.sqftPrice}/sqft, Minimum: ${item.sqftMinimum} sqft`,
+          imageUrl: '',
+          manufacturer: '',
+          sqftPrice: item.sqftPrice
+        }));
+        
+        const formattedManufacturers = manufacturersData.map((item: any) => ({
+          id: item.id,
+          name: item.name,
+          type: 'manufacturer',
+          active: true, // Manufacturer model doesn't have active status
+          description: '',
+          imageUrl: '',
+          manufacturer: '',
+          sqftPrice: 0
+        }));
+        
+        // Combine all products
+        const allProducts = [
+          ...formattedDoorStyles,
+          ...formattedFinishes,
+          ...formattedGlassTypes,
+          ...formattedManufacturers
         ];
         
-        setProducts(mockProducts);
-        setFilteredProducts(mockProducts);
+        setProducts(allProducts);
+        setFilteredProducts(allProducts);
       } catch (error) {
         console.error('Failed to load products:', error);
       } finally {
@@ -105,51 +157,228 @@ export default function AdminProductsPage() {
     setFilteredProducts(result);
   }, [products, searchTerm, productType]);
   
-  const handleToggleActive = (id: string) => {
-    const updatedProducts = products.map(product => {
-      if (product.id === id) {
-        return { ...product, active: !product.active };
-      }
-      return product;
-    });
+  const handleToggleActive = async (id: string) => {
+    // Find the product to toggle
+    const productToToggle = products.find(product => product.id === id);
+    if (!productToToggle) return;
     
-    setProducts(updatedProducts);
-    // In real app: await fetch(`/api/products/${id}`, { method: 'PATCH', body: JSON.stringify({ active: !currentActive }) })
+    // Create updated version for UI
+    const updatedProduct = { 
+      ...productToToggle, 
+      active: !productToToggle.active 
+    };
+    
+    try {
+      // Determine API endpoint based on product type
+      let endpoint = '';
+      let requestData = {};
+      
+      switch(productToToggle.type) {
+        case 'doorStyle':
+          endpoint = `/api/door-styles/${id}`;
+          requestData = {
+            name: productToToggle.name,
+            available: !productToToggle.active // Toggle available property
+          };
+          break;
+        case 'finish':
+          endpoint = `/api/finishes/${id}`;
+          // Note: The finish model doesn't have an active/available field
+          // You may need to adjust your database schema
+          alert('Toggling active status for finishes is not supported in the current database schema');
+          return;
+        case 'glassType':
+          endpoint = `/api/glass-types/${id}`;
+          // Note: The glassType model doesn't have an active/available field
+          // You may need to adjust your database schema
+          alert('Toggling active status for glass types is not supported in the current database schema');
+          return;
+        case 'manufacturer':
+          endpoint = `/api/manufacturers/${id}`;
+          // Note: The manufacturer model doesn't have an active/available field
+          // You may need to adjust your database schema
+          alert('Toggling active status for manufacturers is not supported in the current database schema');
+          return;
+      }
+      
+      // Make API call
+      const response = await fetch(endpoint, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestData)
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to update product');
+      }
+      
+      // Update local state only after successful API call
+      const updatedProducts = products.map(product => {
+        if (product.id === id) {
+          return updatedProduct;
+        }
+        return product;
+      });
+      
+      setProducts(updatedProducts);
+    } catch (error) {
+      console.error('Error updating product:', error);
+      alert('Failed to update product status');
+    }
   };
   
   const handleEditProduct = (product: Product) => {
     setEditingProduct(product);
   };
   
-  const handleSaveEdit = () => {
-    if (!editingProduct) return;
-    
-    const updatedProducts = products.map(product => {
-      if (product.id === editingProduct.id) {
-        return editingProduct;
+  const handleSaveEdit = async () => {
+    try {
+      if (!editingProduct) return;
+      
+      // Determine API endpoint based on product type
+      let endpoint = '';
+      let requestData = {};
+      
+      switch(editingProduct.type) {
+        case 'doorStyle':
+          endpoint = `/api/door-styles/${editingProduct.id}`;
+          requestData = { 
+            name: editingProduct.name,
+            available: editingProduct.active
+          };
+          break;
+        case 'finish':
+          endpoint = `/api/finishes/${editingProduct.id}`;
+          requestData = { 
+            name: editingProduct.name,
+            manufacturer: editingProduct.manufacturer || manufacturers[0]?.name || '',
+            sqftPrice: editingProduct.sqftPrice || 0
+          };
+          break;
+        case 'glassType':
+          endpoint = `/api/glass-types/${editingProduct.id}`;
+          requestData = { 
+            name: editingProduct.name,
+            sqftPrice: 0, // You might need to add this to your form
+            sqftMinimum: 0 // You might need to add this to your form
+          };
+          break;
+        case 'manufacturer':
+          endpoint = `/api/manufacturers/${editingProduct.id}`;
+          requestData = { 
+            name: editingProduct.name
+          };
+          break;
       }
-      return product;
-    });
-    
-    setProducts(updatedProducts);
-    setEditingProduct(null);
-    // In real app: await fetch(`/api/products/${editingProduct.id}`, { method: 'PUT', body: JSON.stringify(editingProduct) })
+      
+      // Make API call
+      const response = await fetch(endpoint, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestData)
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to update product');
+      }
+      
+      // Update local state only after successful API call
+      const updatedProducts = products.map(product => {
+        if (product.id === editingProduct.id) {
+          return editingProduct;
+        }
+        return product;
+      });
+      
+      setProducts(updatedProducts);
+      setEditingProduct(null);
+    } catch (error) {
+      console.error('Error updating product:', error);
+      alert('Failed to update product');
+    }
   };
   
-  const handleAddProduct = () => {
-    const newId = (Math.max(...products.map(p => parseInt(p.id))) + 1).toString();
-    const productToAdd = { ...newProduct, id: newId };
-    
-    setProducts([...products, productToAdd]);
-    setShowAddModal(false);
-    setNewProduct({
-      name: '',
-      type: 'doorStyle',
-      active: true,
-      description: '',
-      imageUrl: ''
-    });
-    // In real app: await fetch('/api/products', { method: 'POST', body: JSON.stringify(newProduct) })
+  const handleAddProduct = async () => {
+    try {
+      // Determine API endpoint based on product type
+      let endpoint = '';
+      let requestData = {};
+      
+      switch(newProduct.type) {
+        case 'doorStyle':
+          endpoint = '/api/door-styles';
+          requestData = { 
+            name: newProduct.name,
+            available: newProduct.active
+          };
+          break;
+        case 'finish':
+          endpoint = '/api/finishes';
+          requestData = { 
+            name: newProduct.name,
+            manufacturer: newProduct.manufacturer || manufacturers[0]?.name || '',
+            sqftPrice: newProduct.sqftPrice || 0
+          };
+          break;
+        case 'glassType':
+          endpoint = '/api/glass-types';
+          requestData = { 
+            name: newProduct.name,
+            sqftPrice: 0, // You might need to add this to your form
+            sqftMinimum: 0 // You might need to add this to your form
+          };
+          break;
+        case 'manufacturer':
+          endpoint = '/api/manufacturers';
+          requestData = { 
+            name: newProduct.name
+          };
+          break;
+      }
+      
+      // Make API call
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestData)
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to create product');
+      }
+      
+      const createdProduct = await response.json();
+      
+      // Add type field to created product for our local state
+      const productWithType = {
+        ...createdProduct,
+        type: newProduct.type,
+        // Map active to available if doorStyle
+        active: newProduct.type === 'doorStyle' ? createdProduct.available : true,
+        description: newProduct.description || '',
+        manufacturer: newProduct.manufacturer || '',
+        sqftPrice: newProduct.sqftPrice || 0
+      };
+      
+      // Update local state with the new product
+      setProducts([...products, productWithType]);
+      
+      // Reset form and close modal
+      setShowAddModal(false);
+      setNewProduct({
+        id: '',
+        name: '',
+        type: 'doorStyle',
+        active: true,
+        description: '',
+        imageUrl: '',
+        manufacturer: '',
+        sqftPrice: 0
+      });
+    } catch (error) {
+      console.error('Error creating product:', error);
+      alert('Failed to create product');
+    }
   };
   
   // If not admin, show access denied
@@ -228,7 +457,7 @@ export default function AdminProductsPage() {
                 <tr>
                   <th className="py-3 px-4 text-left font-semibold text-gray-800">Name</th>
                   <th className="py-3 px-4 text-left font-semibold text-gray-800">Type</th>
-                  <th className="py-3 px-4 text-left font-semibold text-gray-800">Description</th>
+                  <th className="py-3 px-4 text-left font-semibold text-gray-800">Details</th>
                   <th className="py-3 px-4 text-left font-semibold text-gray-800">Status</th>
                   <th className="py-3 px-4 text-left font-semibold text-gray-800">Actions</th>
                 </tr>
@@ -246,7 +475,14 @@ export default function AdminProductsPage() {
                       {product.type === 'manufacturer' && 'Manufacturer'}
                     </td>
                     <td className="py-3 px-4 text-gray-800">
-                      {product.description}
+                      {product.type === 'finish' && (
+                        <div>
+                          <div><span className="font-medium">Manufacturer:</span> {product.manufacturer}</div>
+                          <div><span className="font-medium">Price:</span> ${product.sqftPrice?.toFixed(2)}/sqft</div>
+                        </div>
+                      )}
+                      {product.type === 'glassType' && product.description}
+                      {(product.type === 'doorStyle' || product.type === 'manufacturer') && product.description}
                     </td>
                     <td className="py-3 px-4">
                       <span className={`inline-block px-2 py-1 rounded text-sm font-medium
@@ -310,6 +546,54 @@ export default function AdminProductsPage() {
                   </select>
                 </div>
                 
+                {editingProduct.type === 'finish' && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium mb-1 text-gray-800">Manufacturer</label>
+                      <select
+                        value={editingProduct.manufacturer || ''}
+                        onChange={(e) => setEditingProduct({...editingProduct, manufacturer: e.target.value})}
+                        className="w-full p-2 border rounded text-gray-800"
+                        required
+                      >
+                        <option value="">Select a manufacturer</option>
+                        {manufacturers.map((manufacturer) => (
+                          <option key={manufacturer.id} value={manufacturer.name}>
+                            {manufacturer.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1 text-gray-800">Price per Square Foot</label>
+                      <input
+                        type="number"
+                        value={editingProduct.sqftPrice || 0}
+                        onChange={(e) => setEditingProduct({...editingProduct, sqftPrice: parseFloat(e.target.value)})}
+                        className="w-full p-2 border rounded text-gray-800"
+                        min="0"
+                        step="0.01"
+                        required
+                      />
+                    </div>
+                  </>
+                )}
+                
+                {editingProduct.type === 'doorStyle' && (
+                  <div className="flex items-center">
+                    <input
+                      type="checkbox"
+                      id="active"
+                      checked={editingProduct.active}
+                      onChange={(e) => setEditingProduct({...editingProduct, active: e.target.checked})}
+                      className="h-4 w-4 text-blue-600 rounded border-gray-300"
+                    />
+                    <label htmlFor="active" className="ml-2 block text-sm text-gray-800">
+                      Available
+                    </label>
+                  </div>
+                )}
+                
                 <div>
                   <label className="block text-sm font-medium mb-1 text-gray-800">Description</label>
                   <textarea
@@ -318,19 +602,6 @@ export default function AdminProductsPage() {
                     className="w-full p-2 border rounded text-gray-800"
                     rows={3}
                   />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium mb-1 text-gray-800">Status</label>
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      checked={editingProduct.active}
-                      onChange={(e) => setEditingProduct({...editingProduct, active: e.target.checked})}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500"
-                    />
-                    <span className="text-gray-800">Active</span>
-                  </div>
                 </div>
               </div>
               
@@ -383,6 +654,54 @@ export default function AdminProductsPage() {
                   </select>
                 </div>
                 
+                {newProduct.type === 'finish' && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium mb-1 text-gray-800">Manufacturer</label>
+                      <select
+                        value={newProduct.manufacturer || ''}
+                        onChange={(e) => setNewProduct({...newProduct, manufacturer: e.target.value})}
+                        className="w-full p-2 border rounded text-gray-800"
+                        required
+                      >
+                        <option value="">Select a manufacturer</option>
+                        {manufacturers.map((manufacturer) => (
+                          <option key={manufacturer.id} value={manufacturer.name}>
+                            {manufacturer.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1 text-gray-800">Price per Square Foot</label>
+                      <input
+                        type="number"
+                        value={newProduct.sqftPrice || 0}
+                        onChange={(e) => setNewProduct({...newProduct, sqftPrice: parseFloat(e.target.value)})}
+                        className="w-full p-2 border rounded text-gray-800"
+                        min="0"
+                        step="0.01"
+                        required
+                      />
+                    </div>
+                  </>
+                )}
+                
+                {newProduct.type === 'doorStyle' && (
+                  <div className="flex items-center">
+                    <input
+                      type="checkbox"
+                      id="newActive"
+                      checked={newProduct.active}
+                      onChange={(e) => setNewProduct({...newProduct, active: e.target.checked})}
+                      className="h-4 w-4 text-blue-600 rounded border-gray-300"
+                    />
+                    <label htmlFor="newActive" className="ml-2 block text-sm text-gray-800">
+                      Available
+                    </label>
+                  </div>
+                )}
+                
                 <div>
                   <label className="block text-sm font-medium mb-1 text-gray-800">Description</label>
                   <textarea
@@ -391,19 +710,6 @@ export default function AdminProductsPage() {
                     className="w-full p-2 border rounded text-gray-800"
                     rows={3}
                   />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium mb-1 text-gray-800">Status</label>
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      checked={newProduct.active}
-                      onChange={(e) => setNewProduct({...newProduct, active: e.target.checked})}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500"
-                    />
-                    <span className="text-gray-800">Active</span>
-                  </div>
                 </div>
               </div>
               
